@@ -3,7 +3,7 @@ import { IDKit, identityCheck, selfieCheckLegacy, type RpContext } from '@worldc
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /** Wallet address can arrive via MiniKit init, the raw WorldApp injection, or the SIWE session
  *  (where the template stores the address as user.id). */
@@ -41,7 +41,16 @@ export const Verify = ({
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [useFallback, setUseFallback] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
+  const [alreadyVerified, setAlreadyVerified] = useState(false);
   const walletAddress = useWalletAddress() ?? serverWallet;
+
+  useEffect(() => {
+    if (!walletAddress) return;
+    fetch(`/api/status/${walletAddress}`)
+      .then((r) => r.json())
+      .then((d) => setAlreadyVerified(Boolean(d.verified)))
+      .catch(() => undefined);
+  }, [walletAddress]);
 
   const onClickVerify = async () => {
     setButtonState('pending');
@@ -114,6 +123,17 @@ export const Verify = ({
       setTimeout(() => setButtonState(undefined), 2000);
     }
   };
+
+  if (alreadyVerified && buttonState !== 'success') {
+    return (
+      <div className="grid w-full gap-2">
+        <p className="text-lg font-semibold">Unlock stock buying</p>
+        <p className="rounded-xl bg-green-50 p-3 text-sm font-medium text-green-700">
+          ✓ Eligible — your wallet is allowlisted on-chain. The pool accepts you.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid w-full gap-4">

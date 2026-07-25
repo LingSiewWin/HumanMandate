@@ -27,11 +27,13 @@ export async function POST(req: NextRequest) {
   const router = process.env.DEMO_SWAP_ROUTER as `0x${string}` | undefined;
   if (!router) return NextResponse.json({ error: 'DEMO_SWAP_ROUTER not configured' }, { status: 500 });
 
-  let calldata: string;
-  try {
-    calldata = (await readFile(join(process.cwd(), 'demo-swap-calldata.txt'), 'utf8')).trim();
-  } catch {
-    return NextResponse.json({ error: 'demo calldata missing' }, { status: 500 });
+  let calldata: string | undefined = process.env.DEMO_SWAP_CALLDATA;
+  if (!calldata) {
+    try {
+      calldata = (await readFile(join(process.cwd(), 'demo-swap-calldata.txt'), 'utf8')).trim();
+    } catch {
+      return NextResponse.json({ error: 'demo calldata missing' }, { status: 500 });
+    }
   }
   if (!isHex(calldata)) return NextResponse.json({ error: 'bad calldata' }, { status: 500 });
 

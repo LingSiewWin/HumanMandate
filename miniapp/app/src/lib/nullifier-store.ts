@@ -6,7 +6,9 @@ import { join } from 'node:path';
  * we must reject nullifiers we've already accepted. Hackathon-grade JSON file store —
  * swap for Postgres NUMERIC(78,0) in production.
  */
-const STORE_PATH = join(process.cwd(), 'nullifiers.json');
+const STORE_PATH = process.env.VERCEL
+  ? '/tmp/nullifiers.json'
+  : join(process.cwd(), 'nullifiers.json');
 
 async function load(): Promise<Record<string, string>> {
   try {

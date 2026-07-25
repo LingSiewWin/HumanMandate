@@ -30,7 +30,7 @@ contract AgentBookForkTest is Test {
     function setUp() public {
         vm.createSelectFork("https://worldchain-mainnet.g.alchemy.com/public");
         registry = new AgentBookRegistry(IAgentBook(AGENT_BOOK));
-        mandate = new HumanMandate(IHumanRegistry(address(registry)));
+        mandate = new HumanMandate(IHumanRegistry(address(registry)), makeAddr("liveness-attestor"));
         usd = new ForkUSD();
         usd.transfer(payer, 100e18);
         vm.prank(payer);

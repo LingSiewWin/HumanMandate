@@ -15,7 +15,8 @@ contract DeployHumanMandate is Script {
 
         vm.startBroadcast(deployerKey);
         registry = new AgentBookRegistry(IAgentBook(agentBook));
-        mandate = new HumanMandate(IHumanRegistry(address(registry)));
+        address livenessAttestor = vm.envOr("LIVENESS_ATTESTOR", vm.addr(deployerKey));
+        mandate = new HumanMandate(IHumanRegistry(address(registry)), livenessAttestor);
         vm.stopBroadcast();
 
         console2.log("AgentBook:        ", agentBook);

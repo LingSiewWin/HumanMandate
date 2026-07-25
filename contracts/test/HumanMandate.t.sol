@@ -44,7 +44,7 @@ contract HumanMandateTest is Test {
 
     function setUp() public {
         registry = new MockRegistry();
-        mandate = new HumanMandate(IHumanRegistry(address(registry)));
+        mandate = new HumanMandate(IHumanRegistry(address(registry)), makeAddr("liveness-attestor"));
         usd = new TestUSD();
         usd.transfer(payer, 100e18);
 

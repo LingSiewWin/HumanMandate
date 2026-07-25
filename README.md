@@ -18,7 +18,12 @@ A ZK Identity Check (proves 18+, non-US nationality; no document leaves the phon
 ```sh
 bun install          # per package
 cp .env.example .env # fill locally — .env is never committed
-forge test           # in contracts/
+
+cd contracts
+forge install foundry-rs/forge-std uniswap/v4-periphery --no-git
+forge test
 ```
+
+`contracts/` implements Uniswap's official Permissioned Pools `IAllowlistChecker` standard: `WorldAllowlistChecker` grants `SWAP_ALLOWED` only to wallets whose World ID proof was verified; one nullifier = one wallet. Unverified wallets hit `Unauthorized()` in the official `PermissionedV4Router`.
 
 Built at ETHGlobal Lisbon 2026.

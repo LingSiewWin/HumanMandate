@@ -20,3 +20,6 @@ broadcast/
 dist/
 .next/
 .DS_Store
+
+# foundry deps (reinstall: forge install uniswap/v4-periphery --no-git)
+contracts/lib/

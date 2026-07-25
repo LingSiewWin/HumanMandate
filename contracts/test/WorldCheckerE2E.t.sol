@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {CustomRevert} from "@uniswap/v4-core/src/libraries/CustomRevert.sol";
 import {IHooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,6 +13,7 @@ import {
 } from "v4-periphery/test/hooks/permissionedPools/shared/PermissionedRoutingTestHelpers.sol";
 import {Planner} from "v4-periphery/test/shared/Planner.sol";
 import {MockPermissionedToken} from "v4-periphery/test/hooks/permissionedPools/PermissionedPoolsBase.sol";
+import {PermissionFlags} from "v4-periphery/src/hooks/permissionedPools/libraries/PermissionFlags.sol";
 
 import {WorldAllowlistChecker} from "../src/WorldAllowlistChecker.sol";
 
@@ -85,8 +85,8 @@ contract WorldCheckerE2ETest is PermissionedRoutingTestHelpers {
     function _fundAndAllow(address wallet) internal {
         MockPermissionedToken(Currency.unwrap(currency0)).setTokenAllowlist(wallet, true);
         MockPermissionedToken(Currency.unwrap(currency1)).setTokenAllowlist(wallet, true);
-        IERC20(Currency.unwrap(currency0)).transfer(wallet, 2 ether);
-        IERC20(Currency.unwrap(currency1)).transfer(wallet, 2 ether);
+        assertTrue(IERC20(Currency.unwrap(currency0)).transfer(wallet, 2 ether));
+        assertTrue(IERC20(Currency.unwrap(currency1)).transfer(wallet, 2 ether));
     }
 
     function _approveAs(address wallet) internal {
@@ -122,6 +122,32 @@ contract WorldCheckerE2ETest is PermissionedRoutingTestHelpers {
         bytes memory data = _swapPlan();
 
         vm.prank(unverifiedWallet);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CustomRevert.WrappedError.selector,
+                address(permissionedHooks),
+                IHooks.beforeSwap.selector,
+                abi.encodeWithSelector(Unauthorized.selector),
+                abi.encodeWithSelector(HookCallFailed.selector)
+            )
+        );
+        permissionedRouter.execute(COMMAND_V4_SWAP, toBytesArray(data), type(uint256).max);
+    }
+
+    /// @dev Negative control: this wallet carries FULL permissions in the mock token's own
+    ///      allowlist (which the original MockAllowlistChecker would honor) — if the pool were
+    ///      still consulting anything other than OUR checker, this swap would succeed and this
+    ///      test would fail.
+    function test_wallet_allowed_by_token_map_but_not_by_world_id_still_reverts() public {
+        address tokenBlessedWallet = makeAddr("TOKEN_BLESSED");
+        MockPermissionedToken(Currency.unwrap(currency0)).setAllowlist(tokenBlessedWallet, PermissionFlags.ALL_ALLOWED);
+        MockPermissionedToken(Currency.unwrap(currency1)).setAllowlist(tokenBlessedWallet, PermissionFlags.ALL_ALLOWED);
+        assertTrue(IERC20(Currency.unwrap(currency0)).transfer(tokenBlessedWallet, 2 ether));
+        assertTrue(IERC20(Currency.unwrap(currency1)).transfer(tokenBlessedWallet, 2 ether));
+        _approveAs(tokenBlessedWallet);
+
+        bytes memory data = _swapPlan();
+        vm.prank(tokenBlessedWallet);
         vm.expectRevert(
             abi.encodeWithSelector(
                 CustomRevert.WrappedError.selector,

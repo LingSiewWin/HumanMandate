@@ -4,10 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {WorldAllowlistChecker} from "../src/WorldAllowlistChecker.sol";
 import {IAllowlistChecker} from "v4-periphery/src/hooks/permissionedPools/interfaces/IAllowlistChecker.sol";
-import {
-    PermissionFlag,
-    PermissionFlags
-} from "v4-periphery/src/hooks/permissionedPools/libraries/PermissionFlags.sol";
+import {PermissionFlags} from "v4-periphery/src/hooks/permissionedPools/libraries/PermissionFlags.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract WorldAllowlistCheckerTest is Test {

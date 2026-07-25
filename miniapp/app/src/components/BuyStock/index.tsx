@@ -101,6 +101,30 @@ export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
       <a href={REVERT_PROOF_TX} target="_blank" rel="noreferrer" className="text-xs text-gray-400 underline">
         Proof the pool says no: identical swap from an unverified wallet → reverted on-chain ↗
       </a>
+      <LiveGoldQuote />
     </div>
   );
 };
+
+/** Real-asset leg: live Uniswap Trading API quote, straight from mainnet. */
+const LiveGoldQuote = () => {
+  const [quote, setQuote] = useState<{ paxgOut: number; gasFeeUSD: string }>();
+  useEffect(() => {
+    const load = () =>
+      fetch('/api/quote')
+        .then((r) => r.json())
+        .then((d) => d.paxgOut && setQuote(d))
+        .catch(() => undefined);
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, []);
+  if (!quote) return null;
+  return (
+    <p className="rounded bg-amber-50 p-2 text-[11px] leading-snug text-amber-800">
+      Real-asset rail is LIVE: $1 buys {quote.paxgOut.toFixed(6)} PAXG (vaulted gold) right
+      now on Ethereum mainnet via Uniswap Trading API · est. gas ${quote.gasFeeUSD}
+    </p>
+  );
+};
+

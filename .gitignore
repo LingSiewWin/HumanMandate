@@ -1,0 +1,22 @@
+# ── secrets: never committed, never hardcoded ──
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ── private docs: only README.md is public ──
+*.md
+!README.md
+docs/
+CLAUDE.md
+.claude/
+
+# ── deps / build ──
+node_modules/
+out/
+cache/
+broadcast/
+dist/
+.next/
+.DS_Store

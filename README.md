@@ -21,6 +21,9 @@ cp .env.example .env # fill locally — .env is never committed
 
 cd contracts
 forge install foundry-rs/forge-std uniswap/v4-periphery --no-git
+# one-line patch: the official test helper self-imports via a remapping we don't replicate
+sed -i '' 's|import {Deploy} from "test/shared/Deploy.sol";|import {Deploy} from "../../../shared/Deploy.sol";|' \
+  lib/v4-periphery/test/hooks/permissionedPools/shared/PermissionedRoutingTestHelpers.sol
 forge test
 ```
 

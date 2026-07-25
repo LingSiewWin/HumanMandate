@@ -5,7 +5,8 @@ libs = ["lib"]
 solc_version = "0.8.26"
 evm_version = "cancun"
 optimizer = true
-optimizer_runs = 1000
+optimizer_runs = 44444444
+gas_limit = "3000000000"
 remappings = [
     "v4-periphery/=lib/v4-periphery/",
     "@uniswap/v4-core/=lib/v4-periphery/lib/v4-core/",
@@ -13,4 +14,8 @@ remappings = [
     "solmate/=lib/v4-periphery/lib/v4-core/lib/solmate/",
     "permit2/=lib/v4-periphery/lib/permit2/",
     "forge-std/=lib/forge-std/src/",
+    "test/=lib/v4-periphery/test/",
 ]
+fs_permissions = [{ access = "read", path = "out" }]
+via_ir = true
+

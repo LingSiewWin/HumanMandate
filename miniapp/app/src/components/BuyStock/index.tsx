@@ -20,10 +20,21 @@ export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
 
   useEffect(() => {
     if (!walletAddress) return;
-    fetch(`/api/status/${walletAddress}`)
-      .then((r) => r.json())
-      .then((d) => setVerified(Boolean(d.verified)))
-      .catch(() => setVerified(undefined));
+    let active = true;
+    const check = () =>
+      fetch(`/api/status/${walletAddress}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (active) setVerified(Boolean(d.verified));
+        })
+        .catch(() => undefined);
+    check();
+    // poll so the card unlocks the moment verification lands on-chain
+    const id = setInterval(check, 5000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
   }, [walletAddress]);
 
   const onBuy = async () => {

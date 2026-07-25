@@ -27,3 +27,4 @@ contracts/lib/
 # MCP config contains API keys
 .mcp.json
 nullifiers.json
+.vercel/

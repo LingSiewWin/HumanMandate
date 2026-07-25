@@ -30,3 +30,7 @@ forge test
 `contracts/` implements Uniswap's official Permissioned Pools `IAllowlistChecker` standard: `WorldAllowlistChecker` grants `SWAP_ALLOWED` only to wallets whose World ID proof was verified; one nullifier = one wallet. Unverified wallets hit `Unauthorized()` in the official `PermissionedV4Router`.
 
 Built at ETHGlobal Lisbon 2026.
+
+## AI usage disclosure
+
+Built with Claude Code as pair programmer for scaffolding, test writing, and integration against official docs (Uniswap v4-periphery permissioned pools, World IDKit/MiniKit). Architecture decisions, product design, verification of every on-chain execution, and all judgment calls were made by the team; every claim in this README is backed by a real transaction hash.

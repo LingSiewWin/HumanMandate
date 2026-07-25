@@ -46,16 +46,6 @@ contract WorldAllowlistCheckerTest is Test {
         checker.verify(maria, NULLIFIER_MARIA);
     }
 
-    function test_verify_reverts_on_reused_nullifier() public {
-        vm.startPrank(backend);
-        checker.verify(maria, NULLIFIER_MARIA);
-        vm.expectRevert(
-            abi.encodeWithSelector(WorldAllowlistChecker.NullifierAlreadyUsed.selector, NULLIFIER_MARIA)
-        );
-        checker.verify(stranger, NULLIFIER_MARIA);
-        vm.stopPrank();
-    }
-
     function test_verify_reverts_on_zero_address() public {
         vm.prank(backend);
         vm.expectRevert(WorldAllowlistChecker.ZeroAddress.selector);
@@ -83,5 +73,28 @@ contract WorldAllowlistCheckerTest is Test {
 
     function test_supports_allowlist_checker_interface() public view {
         assertTrue(checker.supportsInterface(type(IAllowlistChecker).interfaceId));
+    }
+
+    function test_same_human_new_wallet_migrates_old_wallet_revoked() public {
+        address mariaNewPhone = makeAddr("maria-new-phone");
+
+        vm.startPrank(backend);
+        checker.verify(maria, NULLIFIER_MARIA);
+        checker.verify(mariaNewPhone, NULLIFIER_MARIA);
+        vm.stopPrank();
+
+        // one human = one active wallet: new wallet works, old wallet is dead
+        assertTrue(checker.checkAllowlist(mariaNewPhone, token) == PermissionFlags.ALL_ALLOWED);
+        assertTrue(checker.checkAllowlist(maria, token) == PermissionFlags.NONE);
+    }
+
+    function test_migration_cannot_steal_wallet_bound_to_other_nullifier() public {
+        uint256 nullifierAttacker = uint256(keccak256("attacker-world-id"));
+
+        vm.startPrank(backend);
+        checker.verify(maria, NULLIFIER_MARIA);
+        vm.expectRevert(abi.encodeWithSelector(WorldAllowlistChecker.AccountAlreadyBound.selector, maria));
+        checker.verify(maria, nullifierAttacker);
+        vm.stopPrank();
     }
 }

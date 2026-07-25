@@ -11,24 +11,41 @@ import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step
 /// @title WorldAllowlistChecker
 /// @notice IAllowlistChecker implementation fed by World ID Identity Check proofs.
 ///         Owner = backend signer that verifies ZK proofs off-chain (World Developer Portal API),
-///         then registers the proven wallet here. One World ID nullifier maps to at most one
-///         wallet, so one human can never allowlist a fleet of addresses.
+///         then registers the proven wallet here. A World ID nullifier is bound to at most one
+///         active wallet: proving again from a new wallet migrates the credential (old wallet
+///         revoked), so one human can never operate a fleet of allowlisted addresses.
 contract WorldAllowlistChecker is BaseAllowlistChecker, Ownable2Step {
     error ZeroAddress();
-    error NullifierAlreadyUsed(uint256 nullifierHash);
+    error InvalidNullifier();
+    error AccountAlreadyBound(address account);
 
     event AccountVerified(address indexed account, uint256 indexed nullifierHash);
     event AccountRevoked(address indexed account);
 
     mapping(address account => bool) public verified;
-    mapping(uint256 nullifierHash => bool) public usedNullifiers;
+    mapping(uint256 nullifierHash => address account) public nullifierAccount;
+    mapping(address account => uint256 nullifierHash) public accountNullifier;
 
     constructor(address initialOwner) Ownable(initialOwner) {}
 
     function verify(address account, uint256 nullifierHash) external onlyOwner {
         if (account == address(0)) revert ZeroAddress();
-        if (usedNullifiers[nullifierHash]) revert NullifierAlreadyUsed(nullifierHash);
-        usedNullifiers[nullifierHash] = true;
+        if (nullifierHash == 0) revert InvalidNullifier();
+
+        uint256 existingNullifier = accountNullifier[account];
+        if (existingNullifier != 0 && existingNullifier != nullifierHash) {
+            revert AccountAlreadyBound(account);
+        }
+
+        address previousAccount = nullifierAccount[nullifierHash];
+        if (previousAccount != address(0) && previousAccount != account) {
+            verified[previousAccount] = false;
+            delete accountNullifier[previousAccount];
+            emit AccountRevoked(previousAccount);
+        }
+
+        nullifierAccount[nullifierHash] = account;
+        accountNullifier[account] = nullifierHash;
         verified[account] = true;
         emit AccountVerified(account, nullifierHash);
     }

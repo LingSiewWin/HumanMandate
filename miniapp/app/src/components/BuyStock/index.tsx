@@ -99,7 +99,7 @@ export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
       )}
 
       <a href={REVERT_PROOF_TX} target="_blank" rel="noreferrer" className="text-xs text-gray-400 underline">
-        Proof the pool says no: identical swap from an unverified wallet → reverted on-chain ↗
+        Same trade, no proof of personhood → the pool turned it away, on-chain ↗
       </a>
       <LiveGoldQuote />
     </div>

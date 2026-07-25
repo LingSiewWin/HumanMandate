@@ -19,11 +19,12 @@ contract DcaLeash {
     error ZeroAddress();
     error ZeroCap();
 
-    event Authorized(address indexed user, address indexed agent, address token, uint128 dailyCap, address recipient);
+    event Authorized(address indexed user, address indexed agent, address token, uint128 dailyCap, address recipient, bytes32 strategyScope);
     event Revoked(address indexed user);
     event Pulled(address indexed user, address indexed agent, uint256 amount, address recipient);
 
     struct Authorization {
+        bytes32 strategyScope;
         address agent;
         address token;
         address recipient;
@@ -36,9 +37,19 @@ contract DcaLeash {
     mapping(address user => Authorization) public authorizations;
 
     function authorize(address agent, address token, uint128 dailyCap, address recipient) external {
+        _authorize(agent, token, dailyCap, recipient, bytes32(0));
+    }
+
+    /// @notice Scoped mandate: bind the agent to one declared strategy (e.g. keccak256("dca-nvda-daily")).
+    function authorizeScoped(address agent, address token, uint128 dailyCap, address recipient, bytes32 strategyScope) external {
+        _authorize(agent, token, dailyCap, recipient, strategyScope);
+    }
+
+    function _authorize(address agent, address token, uint128 dailyCap, address recipient, bytes32 strategyScope) internal {
         if (agent == address(0) || token == address(0) || recipient == address(0)) revert ZeroAddress();
         if (dailyCap == 0) revert ZeroCap();
         authorizations[msg.sender] = Authorization({
+            strategyScope: strategyScope,
             agent: agent,
             token: token,
             recipient: recipient,
@@ -47,7 +58,7 @@ contract DcaLeash {
             day: uint64(block.timestamp / 1 days),
             active: true
         });
-        emit Authorized(msg.sender, agent, token, dailyCap, recipient);
+        emit Authorized(msg.sender, agent, token, dailyCap, recipient, strategyScope);
     }
 
     function revoke() external {

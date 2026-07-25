@@ -95,3 +95,43 @@ contract WorldAllowlistCheckerTest is Test {
         vm.stopPrank();
     }
 }
+
+contract VoucherTest is Test {
+    WorldAllowlistChecker checker;
+    uint256 backendPk = 0xB0B;
+    address backend;
+    address maria = makeAddr("maria");
+    address relayer = makeAddr("anyone");
+
+    function setUp() public {
+        backend = vm.addr(backendPk);
+        checker = new WorldAllowlistChecker(backend);
+    }
+
+    function _sign(address account, uint256 nullifier, uint256 deadline) internal view returns (bytes memory) {
+        bytes32 digest = checker.voucherDigest(account, nullifier, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(backendPk, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
+    function test_anyone_can_submit_valid_voucher() public {
+        bytes memory sig = _sign(maria, 111, block.timestamp + 600);
+        vm.prank(relayer);
+        checker.verifyWithVoucher(maria, 111, block.timestamp + 600, sig);
+        assertTrue(checker.verified(maria));
+    }
+
+    function test_forged_voucher_reverts() public {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(uint256(0xBAD), checker.voucherDigest(maria, 111, block.timestamp + 600));
+        vm.expectRevert(WorldAllowlistChecker.InvalidVoucher.selector);
+        checker.verifyWithVoucher(maria, 111, block.timestamp + 600, abi.encodePacked(r, s, v));
+    }
+
+    function test_expired_voucher_reverts() public {
+        uint256 deadline = block.timestamp + 1;
+        bytes memory sig = _sign(maria, 111, deadline);
+        vm.warp(block.timestamp + 2);
+        vm.expectRevert(WorldAllowlistChecker.VoucherExpired.selector);
+        checker.verifyWithVoucher(maria, 111, deadline, sig);
+    }
+}

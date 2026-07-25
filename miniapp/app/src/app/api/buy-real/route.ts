@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
   }
 
   // CLASSIC route without a Permit2 signature: strip permitData entirely (the API rejects null)
-  const { permitData: _p, permitTransaction: _t, ...cleanQuote } = quote;
+  const cleanQuote = Object.fromEntries(
+    Object.entries(quote).filter(([k]) => k !== 'permitData' && k !== 'permitTransaction'),
+  );
   const swapRes = await fetch(`${API_URL}/swap`, {
     method: 'POST',
     headers: headers(),

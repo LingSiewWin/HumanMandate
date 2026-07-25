@@ -11,12 +11,12 @@ const REVERT_PROOF_TX =
  * The pool's hook enforces the World ID allowlist on-chain — the standing proof link
  * shows the byte-identical swap from an unverified wallet reverting.
  */
-export const BuyStock = () => {
+export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
   const [state, setState] = useState<'pending' | 'success' | 'failed' | undefined>();
   const [txUrl, setTxUrl] = useState<string>();
   const [verified, setVerified] = useState<boolean>();
   const [errorMsg, setErrorMsg] = useState<string>();
-  const walletAddress = useWalletAddress();
+  const walletAddress = useWalletAddress() ?? serverWallet;
 
   useEffect(() => {
     if (!walletAddress) return;

@@ -85,7 +85,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session: async ({ session, token }) => {
       if (token.userId) {
         session.user.id = token.userId as string;
-        session.user.walletAddress = token.address as string;
+        // Template bug: this read `token.address`, but the jwt callback stores
+        // `token.walletAddress` — so walletAddress was always undefined.
+        session.user.walletAddress = (token.walletAddress ?? token.userId) as string;
         session.user.username = token.username as string;
         session.user.profilePictureUrl = token.profilePictureUrl as string;
       }

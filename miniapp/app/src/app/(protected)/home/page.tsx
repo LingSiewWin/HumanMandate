@@ -36,8 +36,11 @@ export default async function Home() {
           </p>
         </div>
         <UserInfo />
-        <Verify action={process.env.NEXT_PUBLIC_ACTION ?? 'first-stock-eligibility'} />
-        <BuyStock />
+        <Verify
+          action={process.env.NEXT_PUBLIC_ACTION ?? 'first-stock-eligibility'}
+          serverWallet={session?.user.walletAddress ?? session?.user.id}
+        />
+        <BuyStock serverWallet={session?.user.walletAddress ?? session?.user.id} />
         <div className="w-full rounded-2xl border border-dashed border-gray-300 p-4">
           <p className="text-sm font-semibold">AI auto-invest — coming next</p>
           <p className="text-xs text-gray-500">

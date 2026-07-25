@@ -5,15 +5,20 @@ import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 
-/** Wallet address can arrive via MiniKit init, the raw WorldApp injection, or the SIWE session. */
+/** Wallet address can arrive via MiniKit init, the raw WorldApp injection, or the SIWE session
+ *  (where the template stores the address as user.id). */
 export function useWalletAddress(): string | undefined {
   const { data: session } = useSession();
+  const sessionUser = session?.user as { walletAddress?: string; id?: string } | undefined;
+  const sessionAddress = [sessionUser?.walletAddress, sessionUser?.id].find((v) =>
+    v && /^0x[0-9a-fA-F]{40}$/.test(v),
+  );
   return (
     MiniKit.user?.walletAddress ??
     (typeof window !== 'undefined'
       ? (window as unknown as { WorldApp?: { wallet_address?: string } }).WorldApp?.wallet_address
       : undefined) ??
-    (session?.user as { walletAddress?: string } | undefined)?.walletAddress
+    sessionAddress
   );
 }
 
@@ -23,14 +28,20 @@ export function useWalletAddress(): string | undefined {
  * wallet in our on-chain allowlist — the pool itself starts accepting their swaps.
  * Falls back to Selfie Check if Identity Check is unavailable (spec fallback chain).
  */
-export const Verify = ({ action }: { action: string }) => {
+export const Verify = ({
+  action,
+  serverWallet,
+}: {
+  action: string;
+  serverWallet?: string;
+}) => {
   const [buttonState, setButtonState] = useState<
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [useFallback, setUseFallback] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
-  const walletAddress = useWalletAddress();
+  const walletAddress = useWalletAddress() ?? serverWallet;
 
   const onClickVerify = async () => {
     setButtonState('pending');

@@ -23,3 +23,6 @@ dist/
 
 # foundry deps (reinstall: forge install uniswap/v4-periphery --no-git)
 contracts/lib/
+
+# MCP config contains API keys
+.mcp.json

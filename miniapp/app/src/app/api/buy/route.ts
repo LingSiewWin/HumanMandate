@@ -56,12 +56,48 @@ export async function POST(req: NextRequest) {
   const account = privateKeyToAccount(process.env.BACKEND_SIGNER_KEY as `0x${string}`);
   const walletClient = createWalletClient({ account, chain, transport });
 
+  const stockToken = process.env.DEMO_STOCK_TOKEN as `0x${string}` | undefined;
+  if (!stockToken) return NextResponse.json({ error: 'DEMO_STOCK_TOKEN not configured' }, { status: 500 });
+
+  const erc20 = [
+    { type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] },
+    { type: 'function', name: 'transfer', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'bool' }] },
+  ] as const;
+
   const txHash = await walletClient.sendTransaction({ to: router, data: calldata as `0x${string}` });
   const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  if (receipt.status !== 'success') {
+    return NextResponse.json({ success: false, txHash });
+  }
+
+  // Parse the received amount from the receipt's Transfer logs (balance reads against the
+  // load-balanced public RPC can lag a block; the receipt is deterministic).
+  const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  const executorTopic = `0x000000000000000000000000${account.address.slice(2).toLowerCase()}`;
+  const received = receipt.logs
+    .filter(
+      (l) =>
+        l.address.toLowerCase() === stockToken.toLowerCase() &&
+        l.topics[0] === TRANSFER &&
+        l.topics[2]?.toLowerCase() === executorTopic,
+    )
+    .reduce((sum, l) => sum + BigInt(l.data), BigInt(0));
+
+  // Forward the REAL tokens to the user's wallet so ownership is on-chain in their
+  // World App wallet, not a database row.
+  let deliverTx: `0x${string}` | undefined;
+  if (received > BigInt(0)) {
+    deliverTx = await walletClient.writeContract({
+      address: stockToken, abi: erc20, functionName: 'transfer', args: [wallet, received],
+    });
+    await publicClient.waitForTransactionReceipt({ hash: deliverTx });
+  }
 
   return NextResponse.json({
-    success: receipt.status === 'success',
+    success: true,
     txHash,
+    deliverTx,
+    sharesRaw: received.toString(),
     explorer: `https://worldchain-sepolia.explorer.alchemy.com/tx/${txHash}`,
   });
 }

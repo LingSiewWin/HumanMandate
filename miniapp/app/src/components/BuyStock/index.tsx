@@ -14,6 +14,7 @@ const REVERT_PROOF_TX =
 export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
   const [state, setState] = useState<'pending' | 'success' | 'failed' | undefined>();
   const [txUrl, setTxUrl] = useState<string>();
+  const [receipt, setReceipt] = useState<string>();
   const [verified, setVerified] = useState<boolean>();
   const [errorMsg, setErrorMsg] = useState<string>();
   const walletAddress = useWalletAddress() ?? serverWallet;
@@ -51,6 +52,12 @@ export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
       const data = await res.json();
       if (!data.success) throw new Error(data.error ?? 'buy failed');
       setTxUrl(data.explorer);
+      if (data.sharesRaw) {
+        const tokens = Number(BigInt(data.sharesRaw) / BigInt(10 ** 12)) / 1e6;
+        setReceipt(
+          `Order filled: $5.00 → ${tokens.toFixed(4)} tNVDA, delivered to your wallet`,
+        );
+      }
       setState('success');
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : String(error));
@@ -81,6 +88,9 @@ export const BuyStock = ({ serverWallet }: { serverWallet?: string }) => {
 
       {errorMsg && (
         <p className="break-all rounded bg-red-50 p-2 text-xs text-red-600">{errorMsg}</p>
+      )}
+      {receipt && (
+        <p className="rounded bg-green-50 p-2 text-xs font-medium text-green-700">{receipt}</p>
       )}
       {txUrl && (
         <a href={txUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline break-all">

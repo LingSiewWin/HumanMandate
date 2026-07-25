@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { Page } from '@/components/PageLayout';
 import { BuyStock } from '@/components/BuyStock';
+import { Portfolio } from '@/components/Portfolio';
 import { UserInfo } from '@/components/UserInfo';
 import { Verify } from '@/components/Verify';
 import { Marble, TopBar } from '@worldcoin/mini-apps-ui-kit-react';
@@ -40,6 +41,7 @@ export default async function Home() {
           action={process.env.NEXT_PUBLIC_ACTION ?? 'first-stock-eligibility'}
           serverWallet={session?.user.walletAddress ?? session?.user.id}
         />
+        <Portfolio serverWallet={session?.user.walletAddress ?? session?.user.id} />
         <BuyStock serverWallet={session?.user.walletAddress ?? session?.user.id} />
         <div className="w-full rounded-2xl border border-dashed border-gray-300 p-4">
           <p className="text-sm font-semibold">AI auto-invest — coming next</p>

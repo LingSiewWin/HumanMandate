@@ -2,7 +2,20 @@
 import { IDKit, identityCheck, selfieCheckLegacy, type RpContext } from '@worldcoin/idkit';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
+import { useSession } from 'next-auth/react';
 import { useState } from 'react';
+
+/** Wallet address can arrive via MiniKit init, the raw WorldApp injection, or the SIWE session. */
+export function useWalletAddress(): string | undefined {
+  const { data: session } = useSession();
+  return (
+    MiniKit.user?.walletAddress ??
+    (typeof window !== 'undefined'
+      ? (window as unknown as { WorldApp?: { wallet_address?: string } }).WorldApp?.wallet_address
+      : undefined) ??
+    (session?.user as { walletAddress?: string } | undefined)?.walletAddress
+  );
+}
 
 /**
  * Eligibility gate: Identity Check attests 18+ (and nationality for the demo persona)
@@ -16,13 +29,15 @@ export const Verify = ({ action }: { action: string }) => {
   >(undefined);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [useFallback, setUseFallback] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
+  const walletAddress = useWalletAddress();
 
   const onClickVerify = async () => {
     setButtonState('pending');
+    setErrorMsg(undefined);
     try {
-      // Wallet address is available at MiniKit init inside World App (initialization.md)
-      const wallet = MiniKit.user?.walletAddress;
-      if (!wallet) throw new Error('No wallet — open inside World App');
+      const wallet = walletAddress;
+      if (!wallet) throw new Error('No wallet address (MiniKit/session both empty)');
 
       const rpRes = await fetch('/api/rp-signature', {
         method: 'POST',
@@ -57,6 +72,7 @@ export const Verify = ({ action }: { action: string }) => {
 
       const completion = await request.pollUntilCompletion();
       if (!completion.success) {
+        setErrorMsg(`IDKit: ${JSON.stringify(completion).slice(0, 300)}`);
         setButtonState('failed');
         setTimeout(() => setButtonState(undefined), 2000);
         return;
@@ -77,10 +93,12 @@ export const Verify = ({ action }: { action: string }) => {
         setTxHash(data.txHash);
         setButtonState('success');
       } else {
+        setErrorMsg(`backend: ${data.error ?? 'unknown'} ${data.detail ?? ''}`);
         setButtonState('failed');
         setTimeout(() => setButtonState(undefined), 2000);
       }
-    } catch {
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : String(error));
       setButtonState('failed');
       setTimeout(() => setButtonState(undefined), 2000);
     }
@@ -110,6 +128,9 @@ export const Verify = ({ action }: { action: string }) => {
       </LiveFeedback>
       {txHash && (
         <p className="break-all text-xs text-gray-500">allowlist tx: {txHash}</p>
+      )}
+      {errorMsg && (
+        <p className="break-all rounded bg-red-50 p-2 text-xs text-red-600">{errorMsg}</p>
       )}
       <button
         type="button"

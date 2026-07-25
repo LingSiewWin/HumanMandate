@@ -1,7 +1,7 @@
 'use client';
-import { MiniKit } from '@worldcoin/minikit-js';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
 import { useEffect, useState } from 'react';
+import { useWalletAddress } from '@/components/Verify';
 
 const REVERT_PROOF_TX =
   'https://worldchain-sepolia.explorer.alchemy.com/tx/0x2e4defd75474b62c668b5ed721a0a47668e34bc4bdfca7688eab6290113d6f22';
@@ -15,21 +15,23 @@ export const BuyStock = () => {
   const [state, setState] = useState<'pending' | 'success' | 'failed' | undefined>();
   const [txUrl, setTxUrl] = useState<string>();
   const [verified, setVerified] = useState<boolean>();
+  const [errorMsg, setErrorMsg] = useState<string>();
+  const walletAddress = useWalletAddress();
 
   useEffect(() => {
-    const wallet = MiniKit.user?.walletAddress;
-    if (!wallet) return;
-    fetch(`/api/status/${wallet}`)
+    if (!walletAddress) return;
+    fetch(`/api/status/${walletAddress}`)
       .then((r) => r.json())
       .then((d) => setVerified(Boolean(d.verified)))
       .catch(() => setVerified(undefined));
-  }, []);
+  }, [walletAddress]);
 
   const onBuy = async () => {
     setState('pending');
+    setErrorMsg(undefined);
     try {
-      const wallet = MiniKit.user?.walletAddress;
-      if (!wallet) throw new Error('open inside World App');
+      const wallet = walletAddress;
+      if (!wallet) throw new Error('No wallet address (MiniKit/session both empty)');
       const res = await fetch('/api/buy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,7 +41,8 @@ export const BuyStock = () => {
       if (!data.success) throw new Error(data.error ?? 'buy failed');
       setTxUrl(data.explorer);
       setState('success');
-    } catch {
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : String(error));
       setState('failed');
       setTimeout(() => setState(undefined), 2500);
     }
@@ -65,6 +68,9 @@ export const BuyStock = () => {
         </Button>
       </LiveFeedback>
 
+      {errorMsg && (
+        <p className="break-all rounded bg-red-50 p-2 text-xs text-red-600">{errorMsg}</p>
+      )}
       {txUrl && (
         <a href={txUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline break-all">
           mainnet-grade proof: swap tx on explorer ↗

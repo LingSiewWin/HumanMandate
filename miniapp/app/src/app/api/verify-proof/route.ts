@@ -2,6 +2,7 @@ import type { IDKitResult } from '@worldcoin/idkit';
 import { NextRequest, NextResponse } from 'next/server';
 import { isNullifierUsed, markNullifierUsed } from '@/lib/nullifier-store';
 import { registerOnchain } from '@/lib/register-onchain';
+import { signEligibilityVoucher } from '@/lib/voucher';
 
 type PortalVerifyBody = {
   success?: boolean;
@@ -77,7 +78,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'nullifier_already_used' }, { status: 409 });
   }
 
+  // Issue a signed eligibility voucher: proof of what we verified, submittable by ANYONE.
+  // We also relay it ourselves so the demo stays one-tap, but the voucher is the artifact
+  // that keeps the backend off the user's critical path.
+  const voucher = await signEligibilityVoucher(wallet, BigInt(nullifier));
   const { txHash } = await registerOnchain(wallet, nullifier);
   await markNullifierUsed(nullifier, wallet);
-  return NextResponse.json({ success: true, txHash });
+  return NextResponse.json({ success: true, txHash, voucher });
 }

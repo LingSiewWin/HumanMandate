@@ -1,6 +1,6 @@
 # HumanMandate
 
-**A spending authority bound to a human — not to a wallet address.**
+**An allowance bound to a person, not an address.**
 
 We do **not** issue Proof of Human. We **enforce spending rules** for a unique human that World already attested ([Achieving Proof of Human](https://whitepaper.world.org/achieving-proof-of-human) Stage 3 — authentication / relying party).
 

@@ -19,7 +19,7 @@ import type { Metadata } from 'next';
 import styles from './desk.module.css';
 
 export const metadata: Metadata = {
-  title: 'HumanMandate — a company card for AI agents',
+  title: 'HumanMandate — an allowance bound to a person, not an address',
   description:
     'Daily limit, locked payee, one-tap stop — bound to a person on World, not a disposable wallet.',
 };
@@ -70,7 +70,7 @@ export default function DeskPage() {
             </span>
           </nav>
 
-          <h1 className={styles.headline}>A company card for AI agents.</h1>
+          <h1 className={styles.headline}>An allowance bound to a person, not an address.</h1>
           <p className={styles.deck}>
             Daily limit, one locked payee, one tap to stop — bound to a person on World, not to a
             wallet address they can throw away and replace.

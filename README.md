@@ -138,6 +138,22 @@ Real route from the Trading API (`CLASSIC`, 526 bytes of calldata), real liquidi
 
 The refusal is the point. Quoted output was 939042 base units; demanding 1878084 was refused with both figures in the revert data.
 
+### The same code path on real money
+
+The run above spends WETH. The contract does not care which token it is, so the same
+functions run a second card denominated in **real USDC.e** — a $1.50 daily cap with a
+$0.50 ceiling per payment, converting to WETH for the payee. Nothing about the contract
+changed; the token address is a parameter.
+
+| Step | Result | Tx |
+|---|---|---|
+| The agent spends 0.50 USDC.e, under the cap | ok | [`0x96276665…6219d`](https://worldchain-mainnet.explorer.alchemy.com/tx/0x96276665d6f75dd335d2aa61155da8475a30ef912c3501236a47a49cc646219d) |
+| Settle demanding a floor the route cannot pay | `0x76baadda SlippageTooHigh` | [`0x392bddb6…9dce85`](https://worldchain-mainnet.explorer.alchemy.com/tx/0x392bddb637339fc88ecdb6efb21eb373c2f1c5e01711aa89f22b6843129dce85) |
+| Settle with an honest floor — payee receives the WETH | ok | [`0xaef46ee0…db2820`](https://worldchain-mainnet.explorer.alchemy.com/tx/0xaef46ee0599fcf1b8a9ee424ad732873ad46a08b0fa561a1f98689121edb2820) |
+
+This is the shape a dollar-cost-averaging mandate takes: the agent converts a fixed daily
+amount and the proceeds land at an address the payer fixed. The agent holds neither side.
+
 Developer feedback for this integration: [`FEEDBACK.md`](FEEDBACK.md).
 
 ## Tests

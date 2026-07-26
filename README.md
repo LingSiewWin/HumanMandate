@@ -79,6 +79,8 @@ Rows one and two are the discriminating pair. Either alone proves nothing; toget
 
 **Where the money is spent.** A mandate on its own moves one token to one payee. `MandateSwapper` lets a mandated agent convert what it is allowed to spend into the asset the payer chose, routed by the **Uniswap Trading API**, without widening what it may spend.
 
+**Developer feedback for this integration:** [`FEEDBACK.md`](FEEDBACK.md).
+
 **The problem this exists to solve.** A cap counts what *leaves* the payer. Put a swap in the middle and an agent can stay under the cap forever while still draining value — route through a bad pool, or sandwich itself. The amount spent looks obedient; the amount received does not. **A cap with no floor on the output is not a cap.**
 
 The whole path, both contracts:
@@ -115,16 +117,16 @@ So the contract measures the *actual* balance delta and refuses below the floor:
 
 | Where | File | Lines |
 |---|---|---|
-| Output floor enforced on the measured delta | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | **142–147** |
-| Router is immutable (the agent cannot name its own "router") | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | 52, 73 |
+| Output floor enforced on the measured delta | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | **154–159** |
+| Router is immutable (the agent cannot name its own "router") | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | 61 |
 | Payer fixes the asset and payee; the agent picks only timing and route | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | 81–92 |
 | Trading API `/quote` and `/swap` calls | [`scripts/swap.ts`](scripts/swap.ts) | 21, 95, 143 |
-| Routing-aware `/swap` body (UniswapX vs CLASSIC) | [`scripts/swap.ts`](scripts/swap.ts) | 67–90 |
+| Routing-aware `/swap` body (UniswapX vs CLASSIC) | [`scripts/swap.ts`](scripts/swap.ts) | 67–79 |
 | AgentBook read that gates every spend | [`contracts/src/HumanMandate.sol`](contracts/src/HumanMandate.sol) | 105–111, 210–212 |
 
 ### Proved on-chain
 
-Real route from the Trading API (`CLASSIC`, 1054 bytes of calldata), real liquidity, real refusal.
+Real route from the Trading API (`CLASSIC`, 526 bytes of calldata), real liquidity, real refusal.
 
 | Step | Result | Tx |
 |---|---|---|

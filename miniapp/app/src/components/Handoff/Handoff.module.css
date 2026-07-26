@@ -1,0 +1,164 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hm-gap-tight, 12px);
+  padding: 20px;
+  border: 1px solid var(--hm-line);
+  border-radius: var(--hm-radius, 1rem);
+  background: var(--hm-surface);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink);
+}
+
+.lede {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--hm-ink-muted);
+}
+
+.card {
+  margin-top: 4px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--hm-ink);
+  color: var(--hm-primary-fg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cardLabel {
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.cardState {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.cardStateLive {
+  background: var(--hm-success);
+  color: var(--hm-ink);
+}
+
+.cardAmount {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardAmount small {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  opacity: 0.65;
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
+.cardMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 0.75rem;
+}
+
+.cardMeta dt {
+  opacity: 0.55;
+  margin-bottom: 2px;
+}
+
+.cardMeta dd {
+  margin: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  word-break: break-all;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--hm-ink);
+}
+
+.hint {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--hm-ink-muted);
+}
+
+.copyRow {
+  display: flex;
+  gap: 8px;
+}
+
+.code {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--hm-line);
+  background: var(--hm-bg-subtle);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--hm-ink-soft);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.copy {
+  flex-shrink: 0;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--hm-line-strong);
+  background: var(--hm-surface);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--hm-ink);
+  cursor: pointer;
+}
+
+.copy:active {
+  background: var(--hm-fill);
+}
+
+.copied {
+  border-color: var(--hm-success);
+  color: var(--hm-success-ink);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--hm-ink-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--hm-line);
+}

@@ -8,16 +8,17 @@ import {
   DEMO_TOKEN_SYMBOL,
   MANDATE_ADDRESS,
   MANDATE_CHAIN_ID,
-  OLD_MANDATE_ADDRESS,
+  WORLDCHAIN_RPC,
+  DEFAULT_MANDATE_ID,
   REGISTRY_ADDRESS,
   explorerAddress,
   explorerTx,
   mandateAbi,
-  newFiveBeat,
-  newStepUp,
-  oldFiveBeat,
+  demoBeats,
   type MandateView,
 } from '@/lib/mandate';
+import { ActivityFeed } from '@/components/Activity';
+import { Handoff } from '@/components/Handoff';
 import { ScenarioStrip } from '@/components/Scenarios';
 import { defaultScenario, getScenario, type ScenarioId } from '@/lib/scenarios';
 import { useWalletAddress } from '@/hooks/useWalletAddress';
@@ -104,6 +105,8 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const [agentOwner, setAgentOwner] = useState<'mine' | 'demo'>('mine');
   const [ownHumanId, setOwnHumanId] = useState('');
   const [demoAck, setDemoAck] = useState(false);
+  /** Bumped after every confirmed write so the on-chain feed re-reads. */
+  const [chainVersion, setChainVersion] = useState(0);
 
   /** Whose assistant the user is about to let spend. null = nothing valid entered yet. */
   const ownHumanIdValue = useMemo(() => {
@@ -176,6 +179,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
       setFeedback('success');
       setUserOpHash('');
       setBusy(undefined);
+      setChainVersion((v) => v + 1);
       void refresh();
       setTimeout(() => setFeedback(undefined), 3000);
     }
@@ -220,11 +224,30 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
       if (agentOwner === 'demo' && !demoAck) {
         throw new Error('Tick the box to confirm you are allowing the demo assistant');
       }
+      // The contract stores a chain- and contract-scoped reference, never the raw
+      // nullifier, so the id is hashed on-chain before it is ever written down.
+      const client = createPublicClient({
+        chain: worldchain,
+        transport: http(WORLDCHAIN_RPC),
+      });
+      const authorizedHumanRef = await client.readContract({
+        address: MANDATE_ADDRESS,
+        abi: mandateAbi,
+        functionName: 'humanRef',
+        args: [authorizedHumanId],
+      });
       await sendCall(
         encodeFunctionData({
           abi: mandateAbi,
           functionName: 'authorize',
-          args: [authorizedHumanId, DEMO_TOKEN_ADDRESS, DEMO_INITIAL_CAP, DEMO_RECIPIENT],
+          args: [
+            DEFAULT_MANDATE_ID,
+            authorizedHumanRef,
+            DEMO_TOKEN_ADDRESS,
+            DEMO_INITIAL_CAP,
+            DEMO_INITIAL_CAP,
+            DEMO_RECIPIENT,
+          ],
         }),
       );
     } catch (e) {
@@ -240,7 +263,13 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
     setFeedback('pending');
     setErrorMsg(undefined);
     try {
-      await sendCall(encodeFunctionData({ abi: mandateAbi, functionName: 'revoke' }));
+      await sendCall(
+        encodeFunctionData({
+          abi: mandateAbi,
+          functionName: 'revoke',
+          args: [DEFAULT_MANDATE_ID],
+        }),
+      );
     } catch (e) {
       setErrorMsg(errorText(e));
       setFeedback('failed');
@@ -326,7 +355,13 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         encodeFunctionData({
           abi: mandateAbi,
           functionName: 'raiseLimits',
-          args: [capRaw, newRecipient as `0x${string}`, BigInt(step.deadline), step.signature],
+          args: [
+            DEFAULT_MANDATE_ID,
+            capRaw,
+            newRecipient as `0x${string}`,
+            BigInt(step.deadline),
+            step.signature,
+          ],
         }),
       );
     } catch (e) {
@@ -340,7 +375,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const username = session.data?.user?.username;
   const avatar = session.data?.user?.profilePictureUrl;
   const hasMandate = Boolean(mandate && !mandate.empty);
-  const usage = hasMandate ? capUsagePercent(mandate!.spentToday, mandate!.dailyCap) : 0;
+  const usage = hasMandate ? capUsagePercent(mandate!.spentInWindow, mandate!.windowCap) : 0;
 
   let statusLabel = 'Not set up';
   let statusBlurb = 'No spending card for this account yet.';
@@ -413,11 +448,11 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             <dl className={styles.metrics}>
               <div>
                 <dt className={styles.metricLabel}>Daily limit</dt>
-                <dd className={styles.metricValue}>{formatUnitsLoose(mandate.dailyCap)}</dd>
+                <dd className={styles.metricValue}>{formatUnitsLoose(mandate.windowCap)}</dd>
               </div>
               <div>
                 <dt className={styles.metricLabel}>Used today</dt>
-                <dd className={styles.metricValue}>{formatUnitsLoose(mandate.spentToday)}</dd>
+                <dd className={styles.metricValue}>{formatUnitsLoose(mandate.spentInWindow)}</dd>
               </div>
               <div className={styles.metricWide}>
                 <dt className={styles.metricLabel}>Pays only to</dt>
@@ -427,7 +462,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             <div className={styles.capBar}>
               <Progress value={usage} className="w-full" />
               <p className={styles.capCaption}>
-                {formatUnitsLoose(mandate.spentToday)} of {formatUnitsLoose(mandate.dailyCap)} used
+                {formatUnitsLoose(mandate.spentInWindow)} of {formatUnitsLoose(mandate.windowCap)} used
                 today
               </p>
             </div>
@@ -448,6 +483,10 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           Refresh
         </button>
       </section>
+
+      <Handoff wallet={wallet} mandate={mandate} />
+
+      <ActivityFeed wallet={wallet} refreshKey={chainVersion} />
 
       <section className={styles.actions}>
         {feedback && (
@@ -673,7 +712,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
               <p className={styles.sectionLabel}>Advanced</p>
               <div className={styles.contractRow}>
                 <span className={styles.contractLabel}>Allowed to spend (Person ID)</span>
-                <span className={styles.metricValue}>{shortId(mandate.humanId)}</span>
+                <span className={styles.metricValue}>{shortId(mandate.humanRef)}</span>
               </div>
               <div className={styles.contractRow}>
                 <span className={styles.contractLabel}>Your account</span>
@@ -693,65 +732,20 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           )}
 
           <p className={styles.sectionLabel}>
-            OLD five-beat · {short(OLD_MANDATE_ADDRESS)}
+            Every rule, proved on {short(MANDATE_ADDRESS)}
           </p>
           <p className={styles.hint}>
-            authorize / pull / CapExceeded / revoke / Agent B NotAuthorized (pre-step-up contract).
+            One contract, one run. Each revert reason was recovered with <code>cast run</code> and
+            matched against <code>cast sig</code>. The pair that matters is the second and third
+            rows: an address the card never named spends, and an address with no human behind it
+            is refused — either one alone proves nothing.
           </p>
           <ul className={styles.beatList}>
-            {oldFiveBeat.map((b) => (
+            {demoBeats.map((b) => (
               <li key={b.tx} className={styles.beat}>
                 <span className={`${styles.beatLabel} ${b.ok ? '' : styles.beatFail}`}>
                   {b.ok ? 'Pass' : 'Revert'} · {b.label}
-                </span>
-                <a
-                  className={styles.beatLink}
-                  href={explorerTx(b.tx)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {short(b.tx)}
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <p className={styles.sectionLabel}>
-            NEW five-beat · {short(MANDATE_ADDRESS)}
-          </p>
-          <p className={styles.hint}>
-            authorize / pull / CapExceeded / revoke / Agent B NotAuthorized on the App mandate.
-          </p>
-          <ul className={styles.beatList}>
-            {newFiveBeat.map((b) => (
-              <li key={b.tx} className={styles.beat}>
-                <span className={`${styles.beatLabel} ${b.ok ? '' : styles.beatFail}`}>
-                  {b.ok ? 'Pass' : 'Revert'} · {b.label}
-                </span>
-                <a
-                  className={styles.beatLink}
-                  href={explorerTx(b.tx)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {short(b.tx)}
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <p className={styles.sectionLabel}>
-            NEW step-up · {short(MANDATE_ADDRESS)}
-          </p>
-          <p className={styles.hint}>
-            LivenessRequired without Selfie; raiseLimits with EIP-712 attestation. Same NEW address
-            the App shows and calls.
-          </p>
-          <ul className={styles.beatList}>
-            {newStepUp.map((b) => (
-              <li key={b.tx} className={styles.beat}>
-                <span className={`${styles.beatLabel} ${b.ok ? '' : styles.beatFail}`}>
-                  {b.ok ? 'Pass' : 'Revert'} · {b.label}
+                  {b.selector && <> · {b.selector}</>}
                 </span>
                 <a
                   className={styles.beatLink}
@@ -767,7 +761,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
 
           <div className={styles.contracts}>
             <div className={styles.contractRow}>
-              <span className={styles.contractLabel}>App mandate (NEW)</span>
+              <span className={styles.contractLabel}>Mandate</span>
               <a
                 className={styles.beatLink}
                 href={explorerAddress(MANDATE_ADDRESS)}
@@ -775,17 +769,6 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
                 rel="noreferrer"
               >
                 {short(MANDATE_ADDRESS)}
-              </a>
-            </div>
-            <div className={styles.contractRow}>
-              <span className={styles.contractLabel}>Five-beat (OLD)</span>
-              <a
-                className={styles.beatLink}
-                href={explorerAddress(OLD_MANDATE_ADDRESS)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {short(OLD_MANDATE_ADDRESS)}
               </a>
             </div>
             <div className={styles.contractRow}>

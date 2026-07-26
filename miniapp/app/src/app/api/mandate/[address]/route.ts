@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, isAddress } from 'viem';
 import { worldchain } from 'viem/chains';
 import {
+  DEFAULT_MANDATE_ID,
   MANDATE_ADDRESS,
   WORLDCHAIN_RPC,
   mandateAbi,
@@ -9,15 +10,20 @@ import {
 } from '@/lib/mandate';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
+const ZERO_REF = `0x${'0'.repeat(64)}`;
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ address: string }> },
 ) {
   const { address } = await ctx.params;
   if (!isAddress(address)) {
     return NextResponse.json({ error: 'invalid address' }, { status: 400 });
   }
+
+  // One payer can hold many mandates; the app manages one named card by default.
+  const mandateId = (req.nextUrl.searchParams.get('mandateId') ??
+    DEFAULT_MANDATE_ID) as `0x${string}`;
 
   try {
     const client = createPublicClient({
@@ -29,26 +35,36 @@ export async function GET(
       address: MANDATE_ADDRESS,
       abi: mandateAbi,
       functionName: 'mandates',
-      args: [address as `0x${string}`],
+      args: [address as `0x${string}`, mandateId],
     });
 
-    const [humanId, token, recipient, dailyCap, spentToday, day, active] = row;
-    const empty = humanId === BigInt(0) && token === ZERO && !active;
-
-    const view: MandateView = {
-      humanId: humanId.toString(),
+    const [
+      humanRef,
       token,
       recipient,
-      dailyCap: dailyCap.toString(),
-      spentToday: spentToday.toString(),
-      day: day.toString(),
+      windowCap,
+      perTxCap,
+      spentInWindow,
+      windowStart,
       active,
-      empty,
+    ] = row;
+
+    const view: MandateView = {
+      humanRef,
+      token,
+      recipient,
+      windowCap: windowCap.toString(),
+      perTxCap: perTxCap.toString(),
+      spentInWindow: spentInWindow.toString(),
+      windowStart: windowStart.toString(),
+      active,
+      empty: humanRef === ZERO_REF && token === ZERO && !active,
     };
 
     return NextResponse.json({
       mandate: view,
       contract: MANDATE_ADDRESS,
+      mandateId,
       chainId: 480,
     });
   } catch (e) {

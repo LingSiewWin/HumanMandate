@@ -97,36 +97,17 @@
   <div class="stack">
     <div class="kicker">The pain</div>
     <h2>You have never been able to say: “you may spend this much, and I can stop you instantly.”</h2>
-    <p>Hand over a card number and you hand over everything the card can do. Cancel a subscription and you fight a form. Give an AI assistant your details and you are trusting an app’s promise, not a rule. Every payment instrument we have binds authority to a <b>credential</b> — so whoever you cut off simply gets a new one.</p>
+    <p>Hand over a card number and you hand over everything the card can do. Give an AI assistant your details and you are trusting an app’s promise, not a rule. Every payment instrument we have binds authority to a <b>credential</b> — so whoever you cut off simply comes back with a new one.</p>
+    <div class="rule"></div>
+    <div class="grid2">
+      <div class="stat">224,603<small>authorised push payment fraud cases in the UK in one year — money moved with the customer’s own valid authority. Source: UK Finance / PSR.</small></div>
+      <div class="stat">835<small>unique humans have registered 1,185 agent wallets in World’s AgentBook. Verified by us on-chain. Every product built on it gates an API endpoint. <b>None gates money.</b></small></div>
+    </div>
   </div>
   <div class="num">02</div>
 </section>
 
-<!-- 3 · STATISTIC -->
-<section class="dark">
-  <div class="grid2">
-    <div class="stat">224,603<small>authorised push payment fraud cases reported in the UK in a single year — money moved with the customer’s own valid authority. Source: UK Finance / PSR.</small></div>
-    <div class="stat">835<small>unique humans have registered 1,185 agent wallets in World’s AgentBook. Verified by us on-chain. Every product built on it gates an API endpoint. <b>None gates money.</b></small></div>
-  </div>
-  <div class="num">03</div>
-</section>
-
-<!-- 4 · PROBLEM -->
-<section>
-  <div class="stack">
-    <div class="kicker">Why it is structural, not sloppy</div>
-    <h2>Authority binds to the instrument. People are not instruments.</h2>
-    <div class="grid3">
-      <div class="step"><b>Cards</b><span>Authority is the number. Steal the number, become the customer. Cancel the card, the merchant re-onboards.</span></div>
-      <div class="step"><b>Bank mandates</b><span>Direct debits are revocable by form, chargebacks by dispute — both slow, both after the money left.</span></div>
-      <div class="step"><b>Token allowances</b><span>Approve an address. It spends. Revoke it, and the same operator deploys a fresh address in one transaction.</span></div>
-    </div>
-    <p class="note">And now the counterparty is software that can spawn a new address in a second, forever, for free.</p>
-  </div>
-  <div class="num">04</div>
-</section>
-
-<!-- 5 · SOLUTION -->
+<!-- 3 · SOLUTION -->
 <section class="dark">
   <div class="stack">
     <div class="kicker">The solution</div>
@@ -138,10 +119,10 @@
       <div class="step"><b>Widening costs a face</b><span>Spending inside the cap needs nobody present. Raising it, or moving the payee, needs a fresh Selfie Check.</span></div>
     </div>
   </div>
-  <div class="num">05</div>
+  <div class="num">03</div>
 </section>
 
-<!-- 6 · PRODUCT -->
+<!-- 4 · PRODUCT -->
 <section>
   <div class="stack">
     <div class="kicker">The product</div>
@@ -155,10 +136,10 @@
       <div class="step"><b>Need more room?</b><span>Raising the limit asks for your face. That is the only moment it does.</span></div>
     </div>
   </div>
-  <div class="num">06</div>
+  <div class="num">04</div>
 </section>
 
-<!-- 7 · PROOF -->
+<!-- 5 · PROOF -->
 <section class="dark">
   <div class="stack">
     <div class="kicker">Live on World Chain mainnet — not a testnet, not a mock</div>
@@ -175,43 +156,16 @@
         <td class="no">NotHumanBacked</td>
         <td class="mono">0x3c41714f…3b52b7e</td>
       </tr>
-      <tr><td>Spending past the cap</td><td class="no">CapExceeded</td><td class="mono">0x225d8352…57d705</td></tr>
+      <tr><td>Spending past the cap</td><td class="no">CapExceeded</td><td class="mono">0x0c77801c…3dacf2b</td></tr>
       <tr><td>Raising the limit with no fresh liveness proof</td><td class="no">LivenessRequired</td><td class="mono">0xa0f862aa…4ec924</td></tr>
       <tr><td>Raising it <b>with</b> one, then spending at the new limit</td><td class="ok">succeeded</td><td class="mono">0x529cb177…9ad57c</td></tr>
     </table>
-    <p class="note">Every revert reason was recovered with <code>cast run</code> and matched against <code>cast sig</code> — not guessed. No card issuer and no ERC-20 allowance can produce row one.</p>
+    <p class="note">All five are on one contract — <code>0x87BEFf69…fa769050</code> — and every revert reason was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not guessed: <code>0x203ac8ca NotHumanBacked</code>, <code>0x2e8b3b3b CapExceeded</code>, <code>0x6aaa9349 LivenessRequired</code>. No card issuer and no ERC-20 allowance can produce row one.</p>
   </div>
-  <div class="num">07</div>
+  <div class="num">05</div>
 </section>
 
-<!-- 8 · TECH -->
-<section>
-  <div class="stack">
-    <div class="kicker">How it is built</div>
-    <h2>160 lines of Solidity and one registry read.</h2>
-    <div class="grid2">
-      <div>
-        <h3>Contract</h3>
-        <p>Solidity 0.8.26, Foundry. No owner, no pause, no proxy, no upgrade path — nobody, including us, can reach a user’s funds. Custody never moves: the contract holds an allowance and can only ever pay the recipient fixed at authorisation. Rolling 24-hour window, per-payment ceiling, EIP-712 step-up with dynamic linking to amount and payee.</p>
-      </div>
-      <div>
-        <h3>Identity</h3>
-        <p>World AgentBook read directly from Solidity through a pluggable registry interface, so the same mandate works against any person-registry. The raw World ID nullifier never touches the chain — the payer authorises a reference scoped to this chain and this contract, so nothing here becomes a cross-context handle.</p>
-      </div>
-      <div>
-        <h3>Liveness</h3>
-        <p>Selfie Check verified server-side against World’s Developer Portal; the backend signs an EIP-712 authorisation and <b>never sends a transaction</b>. The user submits their own escalation.</p>
-      </div>
-      <div>
-        <h3>Tests</h3>
-        <p>40 passing, including fork tests that read World’s real AgentBook on mainnet at a pinned block. Adversarial cases included: replayed proof, proof for another payee, broken registry, cap reset across midnight.</p>
-      </div>
-    </div>
-  </div>
-  <div class="num">08</div>
-</section>
-
-<!-- 9 · SPONSORS -->
+<!-- 6 · SPONSORS -->
 <section class="dark">
   <div class="stack">
     <div class="kicker">What each partner gets from this</div>
@@ -235,41 +189,10 @@
       </tr>
     </table>
   </div>
-  <div class="num">09</div>
+  <div class="num">06</div>
 </section>
 
-<!-- 10 · USE CASES -->
-<section>
-  <div class="stack">
-    <div class="kicker">Where this is used</div>
-    <h2>Anywhere something spends on your behalf.</h2>
-    <div class="grid3">
-      <div class="step"><b>Your assistant buys things</b><span>Groceries, top-ups, a subscription. €20 a day, one shop, stop it from the lock screen. It cannot pay anyone else, ever.</span></div>
-      <div class="step"><b>A contractor you have not met</b><span>Pay a person, not an invoice address. They change wallets mid-project and the mandate follows them.</span></div>
-      <div class="step"><b>A shared household budget</b><span>One account, several cards, several limits — and cutting someone off does not mean rotating everyone’s keys.</span></div>
-    </div>
-    <div class="rule"></div>
-    <p>Every one of these is the same call: <code>pull(payer, card, amount)</code>. The difference between them is a name and a number, which is what makes this a primitive rather than an app.</p>
-  </div>
-  <div class="num">10</div>
-</section>
-
-<!-- 11 · LIMITS -->
-<section>
-  <div class="stack">
-    <div class="kicker">What we know is still wrong</div>
-    <h2>The honest list, before you find it.</h2>
-    <div class="grid2">
-      <div class="step"><b>Personhood raises the price of a clean identity — it does not stop respawn.</b><span>AgentBook’s <code>register()</code> overwrites its mapping with no consent check, so one cooperating verified person can re-bind a new address. We read the deployed source. The cost of a fresh identity goes from zero to roughly the price of renting someone’s verification — real, but finite.</span></div>
-      <div class="step"><b>Step-up over a plain wallet guards a door in a building with no walls.</b><span>Whoever steals the payer’s key can simply transfer the tokens. This becomes airtight only when the payer is a policy-restricted smart account that may call this contract and nothing else. That is the next module, and we would rather say it than be asked it.</span></div>
-      <div class="step"><b>World App revokes token approvals after every transaction.</b><span>There is no standing-allowance primitive inside a mini-app today, so the payer must be an ordinary wallet. This is the single largest structural gap for agent commerce in the ecosystem, and it is in our feedback to World.</span></div>
-      <div class="step"><b>The demo asset is a test token.</b><span>The enforcement is real, on mainnet, with real gas. The thing being moved is not money you would miss.</span></div>
-    </div>
-  </div>
-  <div class="num">11</div>
-</section>
-
-<!-- 12 · CLOSE -->
+<!-- 7 · CLOSE -->
 <section class="dark">
   <div class="stack">
     <div class="kicker">The one line to remember</div>
@@ -278,7 +201,7 @@
     <div class="rule"></div>
     <p class="note mono">HumanMandate · World Chain mainnet · 0x87BEFf69860b253E6A2476c09d3784B3fa769050</p>
   </div>
-  <div class="num">12</div>
+  <div class="num">07</div>
 </section>
 
 </div>

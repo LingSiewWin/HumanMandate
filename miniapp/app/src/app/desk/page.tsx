@@ -4,7 +4,8 @@ import {
   REGISTRY_ADDRESS,
   explorerAddress,
   explorerTx,
-  newFiveBeat,
+  demoBeats,
+  type DemoBeat,
 } from '@/lib/mandate';
 import { scenarios } from '@/lib/scenarios';
 import type { Metadata } from 'next';
@@ -74,13 +75,14 @@ export default function DeskPage() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>The five beats, on World Chain mainnet</h2>
+        <h2 className={styles.sectionTitle}>Every rule, on World Chain mainnet</h2>
         <p className={styles.sectionNote}>
-          One person, one mandate. The last beat is the one that cannot be reproduced by gating an
-          HTTP endpoint or reissuing a card.
+          One person, one contract, one run. The beats that cannot be reproduced by gating an
+          HTTP endpoint or reissuing a card are the pair in the middle: an address the card never
+          named spends, and an address with no human behind it is refused.
         </p>
         <ol className={styles.beats}>
-          {newFiveBeat.map((b, i) => (
+          {demoBeats.map((b: DemoBeat, i: number) => (
             <li key={b.tx} className={styles.beat}>
               <span className={styles.beatIndex}>{i + 1}</span>
               <span className={styles.beatBody}>

@@ -36,7 +36,7 @@ export const scenarios: readonly Scenario[] = [
     familiar: 'Like a Revolut company card with a daily cap.',
     dailyLimit: '20',
     proofLabel: 'Past the daily limit, the chain refuses — CapExceeded',
-    proofTx: '0x0c77801c7b368363323790bd7b1c6d2d2c53592ad6e008c9df754f9d53dacf2b',
+    proofTx: '0xe91dcc5f00fafbed9154e6952689f6a155604511992187608b95c1aa4d54f2be',
   },
   {
     id: 'metered',
@@ -48,7 +48,7 @@ export const scenarios: readonly Scenario[] = [
     familiar: 'Like a Privacy.com card locked to a single merchant.',
     dailyLimit: '5',
     proofLabel: 'Changing limit or payee without a face check — LivenessRequired',
-    proofTx: '0xa0f862aa698ddc389499beaa58aef53df1543eb2032da219d6f95569634ec924',
+    proofTx: '0x61f5ccf45deaa8f40712b769fd44f50b8a614dc38f05b51253dc00045911cdd5',
   },
   {
     id: 'contractor',
@@ -60,7 +60,7 @@ export const scenarios: readonly Scenario[] = [
     familiar: 'Like finance freezing every card issued to one employee.',
     dailyLimit: '100',
     proofLabel: 'Stopped, then a brand-new address from the same person — NotAuthorized',
-    proofTx: '0x73db31754625ace1dc5ef9b98eb1188c609831afd291be6197de601f22b22208',
+    proofTx: '0x23db1c10f5108d9d9ef930da742dd9fee9246d4293591ebe15775d51db115dab',
   },
 ] as const;
 

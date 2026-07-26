@@ -42,6 +42,8 @@ export type ActivityItem = {
   agent?: string;
   recipient?: string;
   blockNumber: number;
+  /** Unix seconds of the block. Needed to tell which charges fall inside the live window. */
+  timestamp?: number;
   txHash: string;
 };
 
@@ -49,8 +51,16 @@ type RawLog = {
   topics: (string | null)[];
   data: `0x${string}`;
   blockNumber: string;
+  /** Hex unix seconds. Absent on some explorer responses, hence optional. */
+  timeStamp?: string;
   transactionHash: string;
 };
+
+function blockTime(log: RawLog): number | undefined {
+  if (!log.timeStamp) return undefined;
+  const seconds = Number(log.timeStamp);
+  return Number.isFinite(seconds) ? seconds : undefined;
+}
 
 /** Whole-token rendering for prose, e.g. "3" rather than "3000000000000000000". */
 function formatWhole(raw: bigint, decimals = 18): string {
@@ -98,6 +108,7 @@ function decodePulled(log: RawLog): ActivityItem {
     agent,
     recipient,
     blockNumber: Number(log.blockNumber),
+    timestamp: blockTime(log),
     txHash: log.transactionHash,
   };
 }
@@ -121,6 +132,7 @@ function decodeAuthorized(log: RawLog): ActivityItem {
     token,
     recipient,
     blockNumber: Number(log.blockNumber),
+    timestamp: blockTime(log),
     txHash: log.transactionHash,
   };
 }
@@ -139,6 +151,7 @@ function decodeRaised(log: RawLog): ActivityItem {
     mandateId: log.topics[2] ?? undefined,
     recipient,
     blockNumber: Number(log.blockNumber),
+    timestamp: blockTime(log),
     txHash: log.transactionHash,
   };
 }
@@ -150,6 +163,7 @@ function decodeRevoked(log: RawLog): ActivityItem {
     detail: 'Every agent that person will ever operate lost access here.',
     mandateId: log.topics[2] ?? undefined,
     blockNumber: Number(log.blockNumber),
+    timestamp: blockTime(log),
     txHash: log.transactionHash,
   };
 }

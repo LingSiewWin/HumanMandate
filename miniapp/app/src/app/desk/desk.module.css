@@ -107,7 +107,204 @@
   );
 }
 
-/* ---------------------------------------------------------------------- hero */
+/* ------------------------------------------------------------- 1. handoff */
+
+/*
+ * The opening slab. Full viewport minus the page's own 12px gutter top and the 12px
+ * that separates it from the hero, so the two dark panels read as two panels rather
+ * than one long field.
+ */
+.handoff {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  /* Confines the art layer's blend to this section, so it can never reach the paper. */
+  isolation: isolate;
+  margin-bottom: 12px;
+  min-height: calc(100vh - 24px);
+  min-height: calc(100svh - 24px);
+  border-radius: var(--radius-lg);
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+/*
+ * The artwork ships as black stipple on white. Inverting it gives white stipple on
+ * black, which is the only form that belongs on an ink field. The inversion lives on
+ * its own absolutely-positioned layer so it never reaches the type above it, and the
+ * layer is out of flow with `inset: 0`, so it can never shift the layout.
+ *
+ * `screen` on top of the inversion is what makes the drawing sit *in* the ink rather
+ * than on a panel of its own: screen leaves the inverted black field untouched and
+ * only lifts the stipple. Without it the layer paints a visible darker rectangle
+ * wherever the image does not cover the section — which is the whole phone layout,
+ * where the artwork is contained rather than cropped.
+ */
+.handoffArt {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('/brand/handoff-1200.webp');
+  background-repeat: no-repeat;
+  /* Slightly above centre: the fingertips meet there, and the copy sits low. */
+  background-position: 50% 42%;
+  background-size: cover;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  opacity: 0.34;
+}
+
+@media (min-width: 1400px) {
+  .handoffArt {
+    background-image: url('/brand/handoff-2000.webp');
+  }
+}
+
+/*
+ * Contrast safety, not decoration: the top band carries the nav, the bottom band
+ * carries the three beats, and the vignette keeps the corners from competing with the
+ * fingertips. The middle stays open so the composition is still readable.
+ */
+.handoffScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(var(--ink-rgb), 0.8) 0%,
+      rgba(var(--ink-rgb), 0.08) 26%,
+      rgba(var(--ink-rgb), 0.5) 60%,
+      rgba(var(--ink-rgb), 0.95) 100%
+    ),
+    radial-gradient(900px 620px at 50% 42%, transparent 0%, rgba(var(--ink-rgb), 0.4) 100%);
+}
+
+/* The vignette exists to keep the desktop corners quiet. On a phone the drawing is
+   contained rather than cropped, so the same vignette only eats its edges. */
+@media (max-width: 720px) {
+  .handoffScrim {
+    background-image: linear-gradient(
+      180deg,
+      rgba(var(--ink-rgb), 0.8) 0%,
+      rgba(var(--ink-rgb), 0.08) 26%,
+      rgba(var(--ink-rgb), 0.5) 60%,
+      rgba(var(--ink-rgb), 0.95) 100%
+    );
+  }
+}
+
+.handoffInner {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The copy is pushed to the floor of the section, clear of the fingertips. */
+.handoffContent {
+  margin-top: auto;
+  min-width: 0;
+}
+
+.handoffKicker {
+  margin: 0 0 24px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(var(--paper-rgb), 0.66);
+}
+
+.handoffBeats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 860px) {
+  .handoffBeats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+}
+
+/* Hairline above each beat: one rule in a row, three stacked rules on a phone. */
+.handoffBeat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(var(--paper-rgb), 0.26);
+}
+
+.handoffBeatIndex {
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(var(--paper-rgb), 0.52);
+}
+
+.handoffBeatTitle {
+  font-size: clamp(1.25rem, 2.2vw, 1.625rem);
+  font-weight: 500;
+  line-height: 1.16;
+  letter-spacing: -0.028em;
+  color: var(--paper);
+}
+
+.handoffBeatNote {
+  max-width: 38ch;
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: rgba(var(--paper-rgb), 0.72);
+}
+
+.handoffCue {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 48px 0 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(var(--paper-rgb), 0.56);
+}
+
+/* A chevron from two borders — no icon library, no extra asset. */
+.handoffCueArrow {
+  display: block;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  animation: handoffNudge 2.6s ease-in-out infinite;
+}
+
+@keyframes handoffNudge {
+  0%,
+  100% {
+    transform: translateY(-2px) rotate(45deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(45deg);
+  }
+}
+
+/* ------------------------------------------------------------- 2. hero */
 
 .hero {
   position: relative;
@@ -121,10 +318,12 @@
   color: var(--paper);
 }
 
+/* The nav now opens the handoff section above, so the hero's top padding replaces the
+   64px the nav row used to contribute. Everything below it is untouched. */
 .heroInner {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 32px 32px 48px;
+  padding: 64px 32px 48px;
 }
 
 .nav {
@@ -538,6 +737,54 @@
   overflow-wrap: anywhere;
 }
 
+/* ----------------------------------------------------------- surface cards */
+
+/*
+ * Same card shell as the personas — rim, radius, shadow all inherited — with room at
+ * the top for the mark. `isolation` confines the mark's blend to the card.
+ */
+.surface {
+  isolation: isolate;
+}
+
+/*
+ * World's line art is a near-black stroke on an rgb(249,249,249) ground — within one
+ * unit of `--paper`, but the card beneath is translucent, so `multiply` still darkened
+ * that ground into a visible pale square. `darken` takes the per-channel minimum
+ * instead: the ground loses to the card everywhere and disappears, while the strokes
+ * always win. Opacity then dials the stroke back to a mark rather than an image.
+ *
+ * Width and height are set on the element as well as in CSS, so the card's height is
+ * settled before the file arrives.
+ */
+.surfaceMark {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 0 0 16px -4px;
+  object-fit: contain;
+  mix-blend-mode: darken;
+  opacity: 0.85;
+}
+
+.surfaceNote {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--prose);
+}
+
+/* Same treatment as a revert selector: the exact call, in the hash face. */
+.surfaceCall {
+  margin: 12px 0 0;
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0.62;
+  overflow-wrap: anywhere;
+}
+
 /* --------------------------------------------------------- evidence tables */
 
 /*
@@ -757,6 +1004,44 @@
   flex-direction: column;
 }
 
+/*
+ * Four numbers and nothing else. Three are computed from the same arrays the evidence
+ * lists render, so they cannot drift; the fourth is the size of the Solidity suite.
+ * No users, no volume, no adoption — the page's whole claim is that everything on it
+ * can be checked.
+ */
+.stats {
+  list-style: none;
+  margin: 0 0 48px;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 24px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statValue {
+  font-size: clamp(1.75rem, 3.2vw, 2.125rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.032em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.statLabel {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--prose);
+}
+
 .contracts {
   position: relative;
   display: grid;
@@ -801,6 +1086,42 @@
   text-decoration-color: var(--ink);
 }
 
+/* Contact details in the footer's own idiom: prose weight, hairline underline, no
+   badge and no brand colour. */
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 24px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--prose);
+}
+
+.colophonItem {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.colophonDot {
+  padding: 0 12px;
+  color: var(--muted);
+}
+
+.colophonLink {
+  color: var(--prose);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(var(--ink-rgb), 0.28);
+  /* ~34px tap target without changing the line box. */
+  padding: 8px 0;
+}
+
+.colophonLink:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
 /* -------------------------------------------------------------- responsive */
 
 @media (max-width: 720px) {
@@ -808,8 +1129,36 @@
     padding: 8px 8px 0;
   }
 
-  .heroInner {
+  /*
+   * A 3:2 drawing cropped to `cover` inside a portrait phone is a 3.3x zoom on the
+   * middle third — the two hands stop being hands. Contained, the whole composition
+   * sits as a band under the nav, and the copy below it keeps clean ground.
+   */
+  .handoffArt {
+    background-image: url('/brand/handoff-800.webp');
+    background-size: contain;
+    background-position: 50% 20%;
+    opacity: 0.4;
+  }
+
+  .handoffInner {
     padding: 24px 16px 32px;
+  }
+
+  .handoffKicker {
+    margin-bottom: 16px;
+  }
+
+  .handoffBeats {
+    gap: 16px;
+  }
+
+  .handoffCue {
+    margin-top: 32px;
+  }
+
+  .heroInner {
+    padding: 48px 16px 32px;
   }
 
   .nav {
@@ -871,6 +1220,11 @@
   .contract {
     padding: 12px;
   }
+
+  .stats {
+    margin-bottom: 32px;
+    gap: 16px;
+  }
 }
 
 /* --------------------------------------------------------- reduced motion */
@@ -889,5 +1243,11 @@
   .beatLink:hover,
   .beatLink:active {
     transform: none;
+  }
+
+  /* The chevron keeps its 45° rotation — only the bob is dropped. */
+  .handoffCueArrow {
+    animation: none;
+    transform: rotate(45deg);
   }
 }

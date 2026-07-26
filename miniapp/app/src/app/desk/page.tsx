@@ -1,6 +1,7 @@
 import {
   AGENTBOOK_ADDRESS,
   MANDATE_ADDRESS,
+  MANDATE_CHAIN_ID,
   REGISTRY_ADDRESS,
   explorerAddress,
   explorerTx,
@@ -43,10 +44,84 @@ const REFUSAL_TX =
   demoBeats.filter((b) => !b.ok).length + swapProofs.filter((p) => p.refused).length;
 
 /**
+ * The one number on this page that cannot be derived from the imported data: the size
+ * of the Solidity suite. Source is `forge test` in `contracts/` — 48 test functions
+ * across HumanMandate, MandateSwapper, StepUp, DcaLeash and the AgentBook fork test.
+ */
+const TESTS_PASSING = 48;
+
+/**
  * The two beats that carry the whole argument, lifted into the hero by index so the
  * hashes stay the imported literals. Rows 02 and 03 of the evidence list below.
  */
 const HERO_PROOFS: readonly DemoBeat[] = [demoBeats[1], demoBeats[2]];
+
+/** Source and contact. Quiet footer text, deliberately not a call to action. */
+const COLOPHON_LINKS: readonly { readonly label: string; readonly href: string }[] = [
+  { label: 'Source', href: 'https://github.com/LingSiewWin/HumanMandate' },
+  { label: 'X', href: 'https://x.com/siewwwin' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/ling-siew-win/' },
+  { label: 'Telegram', href: 'https://t.me/siewwwin' },
+];
+
+type Surface = {
+  readonly art: string;
+  readonly tag: string;
+  readonly name: string;
+  readonly note: string;
+  /** Set in the hash face beneath the note, the same way selectors are. */
+  readonly call?: string;
+};
+
+/**
+ * The three surfaces the card actually stands on. Each claim below is either performed
+ * by a transaction in the lists above or restated verbatim from the honest-limits
+ * section beneath — no capability is described here that the page cannot show.
+ */
+const SURFACES: readonly Surface[] = [
+  {
+    art: '/brand/illus/world-id.webp',
+    tag: 'World ID',
+    name: 'Selfie Check',
+    note: 'Liveness is asked only where authority widens — raising a cap, or moving the payee. Spending under the limit never triggers it. It is reauthentication before a rule changes, not a proof that anyone is human.',
+  },
+  {
+    art: '/brand/illus/world-chain.webp',
+    tag: 'World Chain',
+    name: 'AgentBook',
+    note: 'Before it moves anything, the payment contract asks World’s registry which person is behind the address, so the rule binds the human rather than the key. Every project listed on agentbook.world gates an HTTP endpoint; none of them guards money in Solidity.',
+    call: 'lookupHuman(address)',
+  },
+  {
+    art: '/brand/illus/world-coin.webp',
+    tag: 'Uniswap',
+    name: 'Trading API',
+    note: 'The venue the allowance is actually spent at. The floor on what the payee receives is enforced on-chain, so a cap that only counts what leaves cannot be drained through a bad route.',
+  },
+];
+
+type HandoffBeat = { readonly title: string; readonly note: string };
+
+/**
+ * The opening section is the product in three sentences. Nothing here is a promise:
+ * each clause is performed by a transaction further down — the cap and the payment
+ * ceiling by row 01, the unattended spend by row 02, the stop and the respawn refusal
+ * by rows 10 and 11.
+ */
+const HANDOFF_BEATS: readonly HandoffBeat[] = [
+  {
+    title: 'You set the limit',
+    note: 'A rolling 24-hour cap, a ceiling on any single payment, and one payee the agent cannot swap out.',
+  },
+  {
+    title: 'It spends without you',
+    note: 'The agent pays with nobody present — no approval pop-up, no key handed over. The limit is the only thing in the way.',
+  },
+  {
+    title: 'You stop the person',
+    note: 'One tap ends it, and a brand-new address from that same human is refused on the next block.',
+  },
+];
 
 /** Never retype a hash — always derive the display form from the imported literal. */
 function shortHash(hash: string): string {
@@ -73,8 +148,17 @@ function toUnits(baseUnits: string, decimals: number): string {
 export default function DeskPage() {
   return (
     <main className={styles.page}>
-      <div className={styles.hero}>
-        <div className={styles.heroInner}>
+      {/*
+        Section 1 — the handoff. The artwork behind it is the literal subject: a human
+        hand and a machine hand, fingertips almost touching. It ships black-on-white,
+        so the layer below inverts it to sit on the ink field; the inversion is on its
+        own absolutely-positioned layer so it never touches the type.
+      */}
+      <section className={styles.handoff} aria-label="What the card does">
+        <div className={styles.handoffArt} aria-hidden="true" />
+        <div className={styles.handoffScrim} aria-hidden="true" />
+
+        <div className={styles.handoffInner}>
           <nav className={styles.nav} aria-label="Summary">
             <span className={styles.navBrand}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -93,6 +177,28 @@ export default function DeskPage() {
             </span>
           </nav>
 
+          <div className={styles.handoffContent}>
+            <p className={styles.handoffKicker}>The handoff</p>
+            <ol className={styles.handoffBeats}>
+              {HANDOFF_BEATS.map((b, i) => (
+                <li key={b.title} className={styles.handoffBeat}>
+                  <span className={styles.handoffBeatIndex}>{rowNumber(i)}</span>
+                  <span className={styles.handoffBeatTitle}>{b.title}</span>
+                  <span className={styles.handoffBeatNote}>{b.note}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p className={styles.handoffCue}>
+            <span aria-hidden="true" className={styles.handoffCueArrow} />
+            {TOTAL_TX} mainnet transactions below
+          </p>
+        </div>
+      </section>
+
+      <div className={styles.hero}>
+        <div className={styles.heroInner}>
           <div className={styles.heroGrid}>
             <div className={styles.heroClaim}>
               <h1 className={styles.headline}>An allowance bound to a person, not an address.</h1>
@@ -287,6 +393,35 @@ export default function DeskPage() {
         </section>
 
         <section className={styles.section}>
+          <p className={styles.eyebrow}>What it is built on</p>
+          <h2 className={styles.sectionTitle}>Three surfaces, three jobs</h2>
+          <p className={styles.sectionNote}>
+            Nothing here is an integration for its own sake. Each surface does one thing the
+            other two cannot, and the transactions above are what happens when they are wired
+            together.
+          </p>
+          <div className={styles.grid}>
+            {SURFACES.map((s) => (
+              <article key={s.name} className={`${styles.card} ${styles.surface}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.art}
+                  alt=""
+                  width={88}
+                  height={88}
+                  loading="lazy"
+                  className={styles.surfaceMark}
+                />
+                <p className={styles.cardTab}>{s.tag}</p>
+                <h3 className={styles.cardName}>{s.name}</h3>
+                <p className={styles.surfaceNote}>{s.note}</p>
+                {s.call ? <p className={styles.surfaceCall}>{s.call}</p> : null}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
           <p className={styles.eyebrow}>Honest limits</p>
           <h2 className={styles.sectionTitle}>Three things we do not claim</h2>
           <ul className={styles.limits}>
@@ -306,6 +441,26 @@ export default function DeskPage() {
         </section>
 
         <footer className={styles.footer}>
+          {/* Four numbers, three of them derived from the same data the lists render. */}
+          <ul className={styles.stats}>
+            <li className={styles.stat}>
+              <span className={styles.statValue}>{TOTAL_TX}</span>
+              <span className={styles.statLabel}>mainnet transactions</span>
+            </li>
+            <li className={styles.stat}>
+              <span className={styles.statValue}>{REFUSAL_TX}</span>
+              <span className={styles.statLabel}>of them refusals</span>
+            </li>
+            <li className={styles.stat}>
+              <span className={styles.statValue}>{TESTS_PASSING}</span>
+              <span className={styles.statLabel}>tests passing</span>
+            </li>
+            <li className={styles.stat}>
+              <span className={styles.statValue}>{MANDATE_CHAIN_ID}</span>
+              <span className={styles.statLabel}>World Chain chain id</span>
+            </li>
+          </ul>
+
           <p className={styles.eyebrow}>Contracts</p>
           <div className={styles.contracts}>
             <div className={styles.contract}>
@@ -353,6 +508,27 @@ export default function DeskPage() {
               </a>
             </div>
           </div>
+
+          {/* Contact, not a call to action — the same weight as the contract labels. */}
+          <p className={styles.colophon}>
+            {COLOPHON_LINKS.map((l, i) => (
+              <span key={l.href} className={styles.colophonItem}>
+                {i > 0 ? (
+                  <span aria-hidden="true" className={styles.colophonDot}>
+                    ·
+                  </span>
+                ) : null}
+                <a
+                  className={styles.colophonLink}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {l.label}
+                </a>
+              </span>
+            ))}
+          </p>
         </footer>
       </div>
     </main>

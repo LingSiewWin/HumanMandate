@@ -56,8 +56,6 @@ const HANDOFF_BEATS = [
 /** The two that carry the whole argument: one accepted, one refused, same call. */
 const HERO_PROOFS: readonly DemoBeat[] = [demoBeats[1], demoBeats[2]];
 
-/** Derived, so the copy can never drift from the evidence it describes. */
-const TOTAL_TX = demoBeats.length + swapProofs.length;
 
 const SURFACES: readonly {
   tag: string;
@@ -128,7 +126,6 @@ export default function DeskPage() {
                 height={26}
                 className={styles.logo}
               />
-              <span className={styles.brandName}>HumanMandate</span>
             </span>
             <span className={styles.navChips}>
               <span className={styles.chip}>World Chain mainnet</span>
@@ -136,7 +133,10 @@ export default function DeskPage() {
           </nav>
 
           <div className={styles.handoffContent}>
-            <p className={styles.handoffKicker}>The handoff</p>
+            <p className={styles.wordmark}>HumanMandate</p>
+            <p className={styles.wordmarkNote}>
+              An allowance bound to a person, not an address.
+            </p>
             <ol className={styles.handoffBeats}>
               {HANDOFF_BEATS.map((b, i) => (
                 <li key={b.title} className={styles.handoffBeat}>
@@ -148,14 +148,19 @@ export default function DeskPage() {
             </ol>
           </div>
 
-          <p className={styles.handoffCue}>
-            <span aria-hidden="true" className={styles.handoffCueArrow} />
-            {TOTAL_TX} mainnet transactions below
-          </p>
+          <div className={styles.handoffActions}>
+            <a className={styles.openApp} href={DEEPLINK} target="_blank" rel="noreferrer">
+              Open in World App
+            </a>
+            <a className={styles.handoffCue} href="#evidence">
+              <span aria-hidden="true" className={styles.handoffCueArrow} />
+              See the two that decide it
+            </a>
+          </div>
         </div>
       </section>
 
-      <div className={styles.hero}>
+      <div className={styles.hero} id="evidence">
         <div className={styles.heroInner}>
           <div className={styles.heroGrid}>
             <div className={styles.heroClaim}>

@@ -1356,3 +1356,56 @@
     transform: rotate(45deg);
   }
 }
+
+/* ── hero wordmark ────────────────────────────────────────────────────────
+   The product name sits where the section label used to, at display size, so
+   the first thing read on the page is what the thing is called. The nav keeps
+   only the mark, so the name is never set twice on one screen.
+   ──────────────────────────────────────────────────────────────────────── */
+.wordmark {
+  margin: 0;
+  font-size: clamp(2.75rem, 8vw, 6rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--paper);
+}
+
+.wordmarkNote {
+  margin: 16px 0 0;
+  max-width: 34ch;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  line-height: 1.45;
+  color: rgba(var(--paper-rgb), 0.72);
+}
+
+.handoffActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: 32px;
+}
+
+/* The one outbound action on the page. It only resolves inside World App, so it
+   is a peer of the in-page link rather than the single dominant call. */
+.openApp {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 120ms ease;
+}
+
+.openApp:hover { transform: scale(1.02); }
+.openApp:active { transform: scale(0.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  .openApp { transition: none; }
+  .openApp:hover, .openApp:active { transform: none; }
+}

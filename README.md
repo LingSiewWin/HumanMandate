@@ -21,37 +21,28 @@ Every branch that ends in a refusal is a real mainnet transaction, linked furthe
 
 ```mermaid
 flowchart LR
-    A["Any address<br/>the person operates"] --> B{"Human<br/>behind it?"}
-    B -->|no| R1["NotHumanBacked"]
-    B -->|yes| C{"The person the<br/>payer authorised?"}
-    C -->|no| R2["WrongHuman"]
-    C -->|yes| D{"Within the per-payment<br/>and rolling 24h caps?"}
-    D -->|no| R3["PerTxCapExceeded<br/>CapExceeded"]
-    D -->|yes| E["Paid to the payee<br/>fixed at authorisation"]
+    A["Any address<br/>they operate"] --> G{"Who is<br/>behind it?"}
+    K[("World AgentBook<br/>read on-chain")] -.-> G
+    G -->|"nobody"| R1["NotHumanBacked"]
+    G -->|"the authorised<br/>person"| C{"Inside the<br/>cap?"}
+    C -->|"no"| R2["CapExceeded"]
+    C -->|"yes"| P["Paid — only to<br/>the one locked payee"]
 
-    K[("World AgentBook<br/>lookupHuman()")] -.->|"answers both gates"| B
-
-    E --> F["Uniswap Trading API<br/>route"]
-    F --> G{"Did the payee receive<br/>at least the floor?"}
-    G -->|no| R4["SlippageTooHigh"]
-    G -->|yes| H["Payee paid in the<br/>asset the payer chose"]
-
-    classDef default fill:#f9f9f8,stroke:#8b8987,color:#2d2c2c,stroke-width:1px;
-    classDef gate fill:#ffffff,stroke:#2d2c2c,color:#2d2c2c,stroke-width:1.5px;
-    classDef refuse fill:#fdecea,stroke:#b3261e,color:#b3261e,stroke-width:1.5px;
-    classDef allow fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d,stroke-width:1.5px;
-    classDef ext fill:#efedea,stroke:#8b8987,color:#2d2c2c,stroke-dasharray:3 3;
-    class B,C,D,G gate;
-    class R1,R2,R3,R4 refuse;
-    class E,H allow;
-    class K ext;
+    classDef q fill:#ffffff,stroke:#2d2c2c,color:#2d2c2c,stroke-width:1.5px;
+    classDef no fill:#fdecea,stroke:#b3261e,color:#b3261e,stroke-width:1.5px;
+    classDef ok fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d,stroke-width:1.5px;
+    classDef n fill:#f9f9f8,stroke:#8b8987,color:#2d2c2c;
+    class G,C q;
+    class R1,R2 no;
+    class P ok;
+    class A,K n;
 ```
+
+Revoking cuts off the **person**. They come back tomorrow on a brand-new address and enter at the same first gate — and are refused again.
 
 Two properties fall out of this shape:
 
 **The budget belongs to the person.** Two different addresses operated by the same human draw on one rolling cap, and revoking cuts off every address that person will ever open.
-
-**The cap survives a swap.** A cap counts what *leaves* you, so once a swap sits in the middle an agent could stay under it forever and still drain value by routing badly. The floor on the measured output is what closes that.
 
 ## Why this is new
 
@@ -89,6 +80,36 @@ Rows one and two are the discriminating pair. Either alone proves nothing; toget
 **Where the money is spent.** A mandate on its own moves one token to one payee. `MandateSwapper` lets a mandated agent convert what it is allowed to spend into the asset the payer chose, routed by the **Uniswap Trading API**, without widening what it may spend.
 
 **The problem this exists to solve.** A cap counts what *leaves* the payer. Put a swap in the middle and an agent can stay under the cap forever while still draining value — route through a bad pool, or sandwich itself. The amount spent looks obedient; the amount received does not. **A cap with no floor on the output is not a cap.**
+
+The whole path, both contracts:
+
+```mermaid
+flowchart LR
+    A["Any address<br/>the person operates"] --> B{"Human<br/>behind it?"}
+    B -->|no| R1["NotHumanBacked"]
+    B -->|yes| C{"The person the<br/>payer authorised?"}
+    C -->|no| R2["WrongHuman"]
+    C -->|yes| D{"Within the per-payment<br/>and rolling 24h caps?"}
+    D -->|no| R3["PerTxCapExceeded<br/>CapExceeded"]
+    D -->|yes| E["Paid to the payee<br/>fixed at authorisation"]
+
+    K[("World AgentBook<br/>lookupHuman()")] -.->|"answers both gates"| B
+
+    E --> F["Uniswap Trading API<br/>route"]
+    F --> G{"Did the payee receive<br/>at least the floor?"}
+    G -->|no| R4["SlippageTooHigh"]
+    G -->|yes| H["Payee paid in the<br/>asset the payer chose"]
+
+    classDef default fill:#f9f9f8,stroke:#8b8987,color:#2d2c2c,stroke-width:1px;
+    classDef gate fill:#ffffff,stroke:#2d2c2c,color:#2d2c2c,stroke-width:1.5px;
+    classDef refuse fill:#fdecea,stroke:#b3261e,color:#b3261e,stroke-width:1.5px;
+    classDef allow fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d,stroke-width:1.5px;
+    classDef ext fill:#efedea,stroke:#8b8987,color:#2d2c2c,stroke-dasharray:3 3;
+    class B,C,D,G gate;
+    class R1,R2,R3,R4 refuse;
+    class E,H allow;
+    class K ext;
+```
 
 So the contract measures the *actual* balance delta and refuses below the floor:
 

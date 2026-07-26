@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HumanMandate — a card you can give to a machine</title>
+<style>
+  @font-face {
+    font-family: 'WorldPro';
+    src: url('./assets/WorldProMVP.ttf') format('truetype');
+    font-display: swap;
+  }
+  :root {
+    --ink: #2d2c2c;
+    --paper: #f9f9f8;
+    --muted: #8b8987;
+    --rule: #e2e0dd;
+    --live: #1f7a4d;
+    --stop: #b3261e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'WorldPro', ui-sans-serif, -apple-system, 'Helvetica Neue', sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .deck { scroll-snap-type: y mandatory; overflow-y: scroll; height: 100vh; }
+  section {
+    scroll-snap-align: start;
+    min-height: 100vh;
+    background: var(--paper);
+    padding: 7vh 8vw;
+    display: flex; flex-direction: column; justify-content: center;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  section.dark { background: var(--ink); color: var(--paper); }
+  section.dark .kicker, section.dark .note { color: #a8a5a2; }
+  section.dark .rule { background: #4a4847; }
+
+  .kicker {
+    font-size: clamp(11px, 1vw, 13px);
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 3vh;
+  }
+  h1 { font-size: clamp(40px, 7.5vw, 104px); line-height: .96; letter-spacing: -.03em; font-weight: 500; }
+  h2 { font-size: clamp(30px, 4.6vw, 62px); line-height: 1.06; letter-spacing: -.02em; font-weight: 500; max-width: 20ch; }
+  h3 { font-size: clamp(19px, 2vw, 26px); line-height: 1.25; font-weight: 500; letter-spacing: -.01em; }
+  p  { font-size: clamp(16px, 1.5vw, 21px); line-height: 1.55; max-width: 62ch; color: #47454a; }
+  section.dark p { color: #c9c6c3; }
+  .lead { font-size: clamp(19px, 2.1vw, 28px); line-height: 1.4; max-width: 30ch; }
+  .note { font-size: clamp(12px, 1.05vw, 14px); color: var(--muted); line-height: 1.5; }
+  .rule { height: 1px; background: var(--rule); margin: 4vh 0; width: 100%; }
+  .stack > * + * { margin-top: 2.4vh; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 3vh 4vw; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 3vh 3vw; }
+
+  .stat { font-size: clamp(48px, 9vw, 120px); line-height: .9; letter-spacing: -.04em; font-weight: 500; }
+  .stat small { display: block; font-size: clamp(14px, 1.3vw, 17px); letter-spacing: 0; color: var(--muted); margin-top: 1.5vh; max-width: 30ch; line-height: 1.45; font-weight: 400; }
+
+  .step { border-top: 1px solid var(--rule); padding-top: 1.6vh; }
+  .step b { display: block; font-size: clamp(15px, 1.4vw, 18px); font-weight: 500; margin-bottom: .6vh; }
+  .step span { font-size: clamp(13px, 1.2vw, 15px); color: var(--muted); line-height: 1.5; }
+
+  table { border-collapse: collapse; width: 100%; font-size: clamp(12px, 1.15vw, 15px); }
+  th, td { text-align: left; padding: 1.5vh 1.4vw 1.5vh 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  section.dark th, section.dark td { border-color: #4a4847; }
+  th { color: var(--muted); font-weight: 400; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+  code, .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: .88em; }
+  a { color: inherit; }
+  .ok { color: var(--live); } .no { color: var(--stop); }
+  section.dark .ok { color: #6ee7a8; } section.dark .no { color: #ff8a80; }
+
+  .logo { position: absolute; top: 5vh; right: 8vw; height: 22px; opacity: .5; }
+  .num  { position: absolute; bottom: 4vh; right: 8vw; font-size: 12px; color: var(--muted); }
+  @media print { .deck { height: auto; overflow: visible; } section { page-break-after: always; height: 100vh; } }
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- 1 -->
+<section class="dark">
+  <div class="stack">
+    <div class="kicker">ETHGlobal Lisbon · 2026</div>
+    <h1>A card you can<br/>give to a machine.</h1>
+    <p class="lead">Spending authority bound to a <em>person</em>, not to an address — enforced on-chain, revocable in one tap, and impossible to exceed.</p>
+  </div>
+  <div class="num">01</div>
+</section>
+
+<!-- 2 · PAIN -->
+<section>
+  <div class="stack">
+    <div class="kicker">The pain</div>
+    <h2>You have never been able to say: “you may spend this much, and I can stop you instantly.”</h2>
+    <p>Hand over a card number and you hand over everything the card can do. Give an AI assistant your details and you are trusting an app’s promise, not a rule. Every payment instrument we have binds authority to a <b>credential</b> — so whoever you cut off simply comes back with a new one.</p>
+    <div class="rule"></div>
+    <div class="grid2">
+      <div class="stat">224,603<small>authorised push payment fraud cases in the UK in one year — money moved with the customer’s own valid authority. Source: UK Finance / PSR.</small></div>
+      <div class="stat">835<small>unique humans have registered 1,185 agent wallets in World’s AgentBook. Verified by us on-chain. Every product built on it gates an API endpoint. <b>None gates money.</b></small></div>
+    </div>
+  </div>
+  <div class="num">02</div>
+</section>
+
+<!-- 3 · SOLUTION -->
+<section class="dark">
+  <div class="stack">
+    <div class="kicker">The solution</div>
+    <h2>Bind the authority to the human behind the machine.</h2>
+    <p>World already answers <em>“is there one unique person behind this wallet?”</em> — the AgentBook registry maps an agent address to an anonymous human identifier, on-chain. We read that registry <b>from inside a payment contract</b> and enforce every rule against the person:</p>
+    <div class="grid3" style="margin-top:2vh">
+      <div class="step"><b>The budget is theirs</b><span>Two of their agents share one rolling 24-hour cap. A new address is not a new allowance.</span></div>
+      <div class="step"><b>The revocation is theirs</b><span>Cut them off and every agent they will ever operate loses access in the same transaction.</span></div>
+      <div class="step"><b>Widening costs a face</b><span>Spending inside the cap needs nobody present. Raising it, or moving the payee, needs a fresh Selfie Check.</span></div>
+    </div>
+  </div>
+  <div class="num">03</div>
+</section>
+
+<!-- 4 · PRODUCT -->
+<section>
+  <div class="stack">
+    <div class="kicker">The product</div>
+    <h2>Five taps, then you stop thinking about it.</h2>
+    <div class="grid3">
+      <div class="step"><b>1 · Prove you’re one person</b><span>Selfie Check inside World App. No document leaves the phone.</span></div>
+      <div class="step"><b>2 · Make a card</b><span>Name it, set a daily limit and a per-payment limit, choose exactly who it can pay.</span></div>
+      <div class="step"><b>3 · Hand it to your assistant</b><span>Paste the person ID of whoever will spend. Nothing else is needed — not their address.</span></div>
+      <div class="step"><b>4 · Watch it work</b><span>A plain-language feed: what was spent, when, to whom, how much of today’s budget is left.</span></div>
+      <div class="step"><b>5 · Stop it, any time</b><span>One tap kills the person, not the key. New addresses included.</span></div>
+      <div class="step"><b>Need more room?</b><span>Raising the limit asks for your face. That is the only moment it does.</span></div>
+    </div>
+  </div>
+  <div class="num">04</div>
+</section>
+
+<!-- 5 · PROOF -->
+<section class="dark">
+  <div class="stack">
+    <div class="kicker">Live on World Chain mainnet — not a testnet, not a mock</div>
+    <h2>The claim, and the transaction that proves it.</h2>
+    <table>
+      <tr><th>What it proves</th><th>Result</th><th>Transaction</th></tr>
+      <tr>
+        <td>An address the mandate <b>never named</b> and nobody ever approved spends anyway — because its <b>person</b> was authorised</td>
+        <td class="ok">succeeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb7fa49a1a4a08774ea6a470e50c2aa23a7645906d4b630e38fd9e6764bc44620">0xb7fa49a1…bc44620</a></td>
+      </tr>
+      <tr>
+        <td>The same call from an address with <b>no human behind it</b> — dies on the registry read</td>
+        <td class="no">NotHumanBacked</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x9ebb088a3a91b11d110c8c396083ff1cdb34863f6c4bffa926834e8e9ae81f0e">0x9ebb088a…ae81f0e</a></td>
+      </tr>
+      <tr>
+        <td>A single payment over the per-transaction cap</td>
+        <td class="no">PerTxCapExceeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x33e79b96d1035ed533e097566456af6a6a38846f032e8d966e1cb6d4288cb650">0x33e79b96…88cb650</a></td>
+      </tr>
+      <tr>
+        <td>One wei past the rolling 24-hour cap</td>
+        <td class="no">CapExceeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xe91dcc5f00fafbed9154e6952689f6a155604511992187608b95c1aa4d54f2be">0xe91dcc5f…d54f2be</a></td>
+      </tr>
+      <tr>
+        <td>Raise the limit with a fresh liveness attestation, then spend at the new cap</td>
+        <td class="ok">succeeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb1e646009690254f768a3706204639e47b0bfda01261e9ab2d268941bc24e603">0xb1e64600…c24e603</a></td>
+      </tr>
+      <tr>
+        <td>Raise the limit with no Selfie Check</td>
+        <td class="no">LivenessRequired</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x61f5ccf45deaa8f40712b769fd44f50b8a614dc38f05b51253dc00045911cdd5">0x61f5ccf4…911cdd5</a></td>
+      </tr>
+      <tr>
+        <td>A revoked person returns on a brand-new address</td>
+        <td class="no">NotAuthorized</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x23db1c10f5108d9d9ef930da742dd9fee9246d4293591ebe15775d51db115dab">0x23db1c10…b115dab</a></td>
+      </tr>
+    </table>
+    <p class="note">All rows are on one contract — <code>0x7fcEc100ADc4e89b09a92e3f7931161791D06054</code> — and every revert selector was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not guessed: <code>0x203ac8ca NotHumanBacked</code>, <code>0xcb0bcbd5 PerTxCapExceeded</code>, <code>0x2e8b3b3b CapExceeded</code>, <code>0x6aaa9349 LivenessRequired</code>, <code>0xa4e1a97e NotAuthorized</code>. No card issuer and no ERC-20 allowance can produce row one.</p>
+  </div>
+  <div class="num">05</div>
+</section>
+
+<!-- 6 · SPONSORS -->
+<section class="dark">
+  <div class="stack">
+    <div class="kicker">What each partner gets from this</div>
+    <h2>Two ecosystems, one primitive.</h2>
+    <table>
+      <tr><th>Partner</th><th>What we do with it</th><th>Why it is new</th></tr>
+      <tr>
+        <td><b>World · AgentKit</b></td>
+        <td>Read AgentBook inside a payment contract, so execution rights over money — not API access — are what human-backing unlocks.</td>
+        <td>All five projects listed on agentbook.world gate an HTTP endpoint. Nobody enforces it in Solidity.</td>
+      </tr>
+      <tr>
+        <td><b>World · Selfie Check</b></td>
+        <td>Liveness required only for privilege escalation: raising a limit or moving a payee. Never for routine spending.</td>
+        <td>Not a login. It is the payments industry’s step-up model — the same shape as adding a payee in a banking app.</td>
+      </tr>
+      <tr>
+        <td><b>Uniswap · Trading API</b></td>
+        <td>The venue the money is actually spent at. A mandate alone moves one token to one payee; the swapper converts it into the asset the payer chose, routed by the API, without widening what may be spent.</td>
+        <td>It did not add a feature, it added a <b>threat</b> — and the fix is the contract below.</td>
+      </tr>
+    </table>
+    <div class="rule"></div>
+    <h3>A ceiling on what goes out is not a cap once there is a swap in the middle.</h3>
+    <p>A cap counts what <em>leaves</em> you. Put a swap in between and an agent can stay under it forever and still drain value by routing badly, because the cap never looks at what comes back. So the contract measures what the payee actually receives and refuses below the floor.</p>
+    <table style="margin-top:2vh">
+      <tr>
+        <td>Settle demanding a floor the route could not pay</td>
+        <td class="no">SlippageTooHigh(939042, 1878084)</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x354bd1260bb7a456215a7b4ffe0b515cef16e533c0ebd17de0bdf9afaec4ea1f">0x354bd126…4ea1f</a></td>
+      </tr>
+      <tr>
+        <td>Settle with an honest floor — payee paid 0.939127 USDC.e</td>
+        <td class="ok">succeeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x33ad7da0b934af549ebaebddaeef7e8efa80371f70280504eb629fb6bbef09a5">0x33ad7da0…f09a5</a></td>
+      </tr>
+    </table>
+    <p class="note">Real Trading API route, CLASSIC, 1054 bytes of calldata. Every other swap demo ends in a successful swap; this one is worth more because it ends in a refused one.</p>
+  </div>
+  <div class="num">06</div>
+</section>
+
+<!-- 7 · CLOSE -->
+<section class="dark">
+  <div class="stack">
+    <div class="kicker">The one line to remember</div>
+    <h1 style="max-width:16ch">We stopped asking machines to be trustworthy.</h1>
+    <p class="lead">We made betraying you structurally impossible instead — and made the leash belong to a person, so letting go of one address does not mean letting go of control.</p>
+    <div class="rule"></div>
+    <p class="note mono">HumanMandate · World Chain mainnet · 0x7fcEc100ADc4e89b09a92e3f7931161791D06054</p>
+  </div>
+  <div class="num">07</div>
+</section>
+
+</div>
+</body>
+</html>

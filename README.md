@@ -15,6 +15,44 @@ HumanMandate binds authority to a **World AgentBook `humanId`** and enforces it 
 
 Built at **ETHGlobal Lisbon 2026**.
 
+## How it works
+
+Every branch that ends in a refusal is a real mainnet transaction, linked further down.
+
+```mermaid
+flowchart TD
+    A["Agent address<br/>(any address the person operates)"] --> B["HumanMandate.pull"]
+    B --> C{"Is a human<br/>behind this address?"}
+    C -->|no| X1["NotHumanBacked"]
+    C -->|yes| D{"Is it the person<br/>the payer authorised?"}
+    D -->|no| X2["WrongHuman"]
+    D -->|yes| E{"Within the per-payment<br/>and rolling 24h caps?"}
+    E -->|no| X3["PerTxCapExceeded<br/>CapExceeded"]
+    E -->|yes| F["Funds move to the payee<br/>fixed at authorisation"]
+
+    C -. reads .-> R[("World AgentBook<br/>lookupHuman(address)")]
+    D -. reads .-> R
+
+    F --> G["MandateSwapper.settle<br/>(only when a route is set)"]
+    G --> H["Uniswap Trading API route"]
+    H --> I{"Did the payee actually<br/>receive at least the floor?"}
+    I -->|no| X4["SlippageTooHigh"]
+    I -->|yes| J["Payee paid in the asset<br/>the payer chose"]
+
+    classDef refuse fill:#fdecea,stroke:#b3261e,color:#b3261e;
+    classDef allow fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d;
+    classDef ext fill:#f4f3f1,stroke:#8b8987,color:#2d2c2c;
+    class X1,X2,X3,X4 refuse;
+    class F,J allow;
+    class R,H ext;
+```
+
+Two properties fall out of this shape:
+
+**The budget belongs to the person.** Two different addresses operated by the same human draw on one rolling cap, and revoking cuts off every address that person will ever open.
+
+**The cap survives a swap.** A cap counts what *leaves* you, so once a swap sits in the middle an agent could stay under it forever and still drain value by routing badly. The floor on the measured output is what closes that.
+
 ## Why this is new
 
 Projects on [agentbook.world](https://agentbook.world) use AgentKit to gate **HTTP** endpoints. None we measured use AgentBook inside a contract to guard **money**. We read the live AgentBook from Solidity and revert on-chain.

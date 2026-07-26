@@ -9,8 +9,8 @@ import {PermissionsAdapter} from "v4-periphery/src/hooks/permissionedPools/Permi
 import {IPermissionsAdapter} from "v4-periphery/src/hooks/permissionedPools/interfaces/IPermissionsAdapter.sol";
 import {PermissionFlags} from "v4-periphery/src/hooks/permissionedPools/libraries/PermissionFlags.sol";
 
-contract StockToken is ERC20 {
-    constructor() ERC20("Tokenized NVDA", "tNVDA") {
+contract DemoAsset is ERC20 {
+    constructor() ERC20("Permissioned Asset (demo)", "pASSET") {
         _mint(msg.sender, 1_000_000e18);
     }
 }
@@ -21,7 +21,7 @@ contract StockToken is ERC20 {
 contract AdapterIntegrationTest is Test {
     WorldAllowlistChecker checker;
     PermissionsAdapter adapter;
-    StockToken stock;
+    DemoAsset asset;
 
     address backend = makeAddr("backend");
     address poolManager = makeAddr("poolManager");
@@ -31,9 +31,9 @@ contract AdapterIntegrationTest is Test {
     uint256 constant NULLIFIER_MARIA = uint256(keccak256("maria-world-id"));
 
     function setUp() public {
-        stock = new StockToken();
+        asset = new DemoAsset();
         checker = new WorldAllowlistChecker(backend);
-        adapter = new PermissionsAdapter(IERC20(address(stock)), poolManager, backend, checker);
+        adapter = new PermissionsAdapter(IERC20(address(asset)), poolManager, backend, checker);
     }
 
     function test_adapter_accepts_our_checker() public view {

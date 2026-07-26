@@ -29,7 +29,7 @@ import {HookMiner} from "v4-periphery/test/shared/HookMiner.sol";
 import {Plan, Planner} from "v4-periphery/test/shared/Planner.sol";
 
 import {WorldAllowlistChecker} from "../src/WorldAllowlistChecker.sol";
-import {StockToken, DemoUSD} from "../src/demo/DemoTokens.sol";
+import {DemoAsset, DemoUSD} from "../src/demo/DemoTokens.sol";
 import {DemoLiquidityRouter} from "../src/demo/DemoLiquidityRouter.sol";
 
 /// @notice Deploys the full permissioned-pool demo stack to a public testnet and executes
@@ -54,14 +54,14 @@ contract DeployDemoStack is Script {
         // 1. Core + factory + tokens
         PoolManager manager = new PoolManager(deployer);
         PermissionsAdapterFactory factory = new PermissionsAdapterFactory(address(manager));
-        StockToken stock = new StockToken();
+        DemoAsset asset = new DemoAsset();
         DemoUSD usd = new DemoUSD();
 
-        // 2. Adapter for the stock token, gated by OUR World ID checker
+        // 2. Adapter for the asset token, gated by OUR World ID checker
         PermissionsAdapter adapter = PermissionsAdapter(
-            factory.createPermissionsAdapter(IERC20(address(stock)), deployer, IAllowlistChecker(address(checker)))
+            factory.createPermissionsAdapter(IERC20(address(asset)), deployer, IAllowlistChecker(address(checker)))
         );
-        stock.approve(address(adapter), 1);
+        asset.approve(address(adapter), 1);
         adapter.depositForVerification(1);
         factory.verifyPermissionsAdapter(address(adapter));
 
@@ -97,11 +97,11 @@ contract DeployDemoStack is Script {
         PoolKey memory key = PoolKey(c0, c1, 3000, 60, IHooks(address(hook)));
         manager.initialize(key, SQRT_PRICE_1_1);
 
-        stock.approve(address(lpRouter), type(uint256).max);
+        asset.approve(address(lpRouter), type(uint256).max);
         usd.approve(address(lpRouter), type(uint256).max);
         lpRouter.addLiquidity(key, ModifyLiquidityParams(-887220, 887220, 1_000e18, 0));
 
-        // 6. REAL verified swap: buy tNVDA with 5 dUSD (María's $5)
+        // 6. REAL verified swap: buy the permissioned asset with 5 dUSD (María's $5)
         usd.approve(address(PERMIT2), type(uint256).max);
         PERMIT2.approve(address(usd), address(swapRouter), type(uint160).max, type(uint48).max);
 
@@ -115,20 +115,20 @@ contract DeployDemoStack is Script {
         );
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = data;
-        uint256 stockBefore = stock.balanceOf(deployer);
+        uint256 assetBefore = asset.balanceOf(deployer);
         swapRouter.execute(hex"10", inputs, block.timestamp + 3600);
-        uint256 stockAfter = stock.balanceOf(deployer);
+        uint256 assetAfter = asset.balanceOf(deployer);
 
         vm.stopBroadcast();
 
         console2.log("PoolManager:        ", address(manager));
         console2.log("Factory:            ", address(factory));
-        console2.log("StockToken tNVDA:   ", address(stock));
+        console2.log("DemoAsset pASSET: ", address(asset));
         console2.log("DemoUSD dUSD:       ", address(usd));
         console2.log("PermissionsAdapter: ", address(adapter));
         console2.log("Hook:               ", address(hook));
         console2.log("SwapRouter:         ", address(swapRouter));
         console2.log("LpRouter:           ", address(lpRouter));
-        console2.log("stock received:     ", stockAfter - stockBefore);
+        console2.log("asset received:   ", assetAfter - assetBefore);
     }
 }

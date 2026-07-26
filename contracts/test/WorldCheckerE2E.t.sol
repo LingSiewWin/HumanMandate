@@ -74,7 +74,7 @@ contract WorldCheckerE2ETest is PermissionedRoutingTestHelpers {
         vm.prank(backend);
         worldChecker.verify(maria, uint256(keccak256("maria-world-id")));
 
-        // Fund both wallets with the permissioned (stock) tokens and set token-level
+        // Fund both wallets with the permissioned tokens and set token-level
         // transfer allowance — so the ONLY thing separating them is the World ID credential
         _fundAndAllow(maria);
         _fundAndAllow(unverifiedWallet);

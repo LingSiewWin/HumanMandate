@@ -40,7 +40,7 @@ contract DcaLeash {
         _authorize(agent, token, dailyCap, recipient, bytes32(0));
     }
 
-    /// @notice Scoped mandate: bind the agent to one declared strategy (e.g. keccak256("dca-nvda-daily")).
+    /// @notice Scoped mandate: bind the agent to one declared strategy (e.g. keccak256("dca-daily")).
     function authorizeScoped(address agent, address token, uint128 dailyCap, address recipient, bytes32 strategyScope) external {
         _authorize(agent, token, dailyCap, recipient, strategyScope);
     }

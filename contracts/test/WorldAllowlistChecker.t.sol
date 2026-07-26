@@ -13,7 +13,7 @@ contract WorldAllowlistCheckerTest is Test {
     address backend = makeAddr("backend");
     address maria = makeAddr("maria");
     address stranger = makeAddr("stranger");
-    address token = makeAddr("stockToken");
+    address token = makeAddr("permissionedToken");
 
     uint256 constant NULLIFIER_MARIA = uint256(keccak256("maria-world-id"));
 

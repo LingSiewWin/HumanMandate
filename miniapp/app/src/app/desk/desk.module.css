@@ -1,254 +1,738 @@
+/*
+ * /desk — the public judging board.
+ *
+ * Structure and texture borrowed from a liquid-glass reference, rendered strictly in
+ * World's own palette and typeface. Two glass tiers: `.chip` (light, for pills) and
+ * `.card` / `.panel` / `.cta` (heavy, for primary surfaces). Edges are drawn with a
+ * masked `::before` gradient rim rather than a `border`, so the rim catches light at
+ * the top and bottom and fades through the middle.
+ *
+ * One rule outranks every aesthetic decision here: the evidence must stay legible.
+ * Blur is never applied behind a hash, and every glass surface has an opaque-enough
+ * fallback that it reads even where `backdrop-filter` is unsupported.
+ */
+
 .page {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 56px 24px 72px;
-  display: flex;
-  flex-direction: column;
-  gap: 64px;
+  /* World palette. Nothing outside these six colours (plus their alphas) is used. */
+  --ink: #2d2c2c;
+  --paper: #f9f9f8;
+  --muted: #8b8987;
+  --rule: #e2e0dd;
+  --pass: #1f7a4d;
+  --fail: #b3261e;
+
+  --ink-rgb: 45, 44, 44;
+  --paper-rgb: 249, 249, 248;
+  --rule-rgb: 226, 224, 221;
+
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+
+  --font-brand: var(--font-world), ui-sans-serif, -apple-system, 'Helvetica Neue', sans-serif;
+  --font-hash: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
+
+  min-height: 100vh;
+  padding: 12px 12px 0;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1100px 720px at 88% 14%, rgba(var(--ink-rgb), 0.05), transparent 62%),
+    radial-gradient(900px 640px at 2% 58%, rgba(var(--ink-rgb), 0.04), transparent 64%);
+  color: var(--ink);
+  font-family: var(--font-brand);
 }
+
+/* ---------------------------------------------------------------- glass rim */
+
+/*
+ * The border trick: a 1.4px padding ring filled with a gradient, then masked so only
+ * the ring itself paints. `mask-composite: exclude` (with the `-webkit-` `xor` twin)
+ * subtracts the content box from the padding box.
+ */
+.chip::before,
+.card::before,
+.cta::before,
+.beats::before,
+.stat::before,
+.contracts::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1.4px;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Rim over the dark hero: light catches at top and bottom, paper only. */
+.chip::before,
+.cta::before {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--paper-rgb), 0.55) 0%,
+    rgba(var(--paper-rgb), 0.14) 42%,
+    rgba(var(--paper-rgb), 0.14) 58%,
+    rgba(var(--paper-rgb), 0.34) 100%
+  );
+}
+
+/* Rim over paper: bright top edge, grounded bottom edge, hairline through the middle
+   so a card never loses its boundary. */
+.card::before,
+.beats::before,
+.stat::before,
+.contracts::before {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--paper-rgb), 0.95) 0%,
+    rgba(var(--rule-rgb), 0.85) 40%,
+    rgba(var(--rule-rgb), 0.85) 60%,
+    rgba(var(--ink-rgb), 0.16) 100%
+  );
+}
+
+/* ---------------------------------------------------------------------- hero */
 
 .hero {
-  animation: hm-rise 0.45s ease-out both;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--ink);
+  background-image:
+    radial-gradient(1200px 620px at 82% -12%, rgba(var(--paper-rgb), 0.14), transparent 60%),
+    radial-gradient(900px 560px at 6% 112%, rgba(var(--paper-rgb), 0.08), transparent 62%),
+    linear-gradient(180deg, rgba(var(--paper-rgb), 0.05) 0%, transparent 36%);
+  color: var(--paper);
 }
 
-.logoRow {
+.heroInner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 32px 44px;
+}
+
+.nav {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 72px;
+}
+
+.navBrand {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 28px;
+  min-width: 0;
 }
 
 .logo {
-  height: 32px;
-  width: 32px;
   display: block;
+  width: 26px;
+  height: 26px;
 }
 
 .brandName {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 500;
   letter-spacing: -0.01em;
-  color: var(--hm-ink);
+  color: var(--paper);
+}
+
+.navChips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Glass tier 1 — light, for pills. */
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: rgba(var(--paper-rgb), 0.1);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(var(--paper-rgb), 0.82);
+  white-space: nowrap;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .chip {
+    background: rgba(var(--paper-rgb), 0.07);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
 }
 
 .headline {
   margin: 0;
-  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: var(--hm-ink);
-  max-width: 16ch;
+  max-width: 15ch;
+  font-size: clamp(2.5rem, 6.4vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--paper);
 }
 
 .deck {
-  margin: 20px 0 0;
-  font-size: clamp(1rem, 1.6vw, 1.1875rem);
-  line-height: 1.5;
-  color: var(--hm-ink-soft);
-  max-width: 56ch;
+  margin: 22px 0 0;
+  max-width: 54ch;
+  font-size: clamp(1rem, 1.5vw, 1.1875rem);
+  line-height: 1.6;
+  color: rgba(var(--paper-rgb), 0.72);
 }
 
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 34px;
+}
+
+/* Glass tier 2 — heavy, and deliberately near-opaque so the CTA is the highest
+   contrast element on the dark field. */
 .cta {
-  display: inline-block;
-  margin-top: 28px;
-  padding: 13px 24px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
-  background: var(--hm-primary);
-  color: var(--hm-primary-fg);
+  padding: 14px 26px;
+  background: rgba(var(--paper-rgb), 0.94);
+  color: var(--ink);
   font-size: 0.9375rem;
   font-weight: 500;
+  letter-spacing: -0.005em;
   text-decoration: none;
+  box-shadow: 0 12px 34px -14px rgba(var(--ink-rgb), 0.9);
+  transition: transform 160ms ease;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .cta {
+    background: rgba(var(--paper-rgb), 0.9);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+}
+
+.cta:hover {
+  transform: scale(1.03);
+}
+
+.cta:active {
+  transform: scale(0.98);
+}
+
+.ctaGhost {
+  font-size: 0.875rem;
+  color: rgba(var(--paper-rgb), 0.66);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(var(--paper-rgb), 0.3);
+}
+
+.ctaGhost:hover {
+  color: var(--paper);
+}
+
+.attribution {
+  margin: 40px 0 0;
+  max-width: 58ch;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgba(var(--paper-rgb), 0.48);
+}
+
+/* --------------------------------------------------------------------- body */
+
+.body {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 88px 20px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 88px;
 }
 
 .section {
-  animation: hm-rise 0.45s ease-out 0.08s both;
+  display: flex;
+  flex-direction: column;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .sectionTitle {
   margin: 0;
-  font-size: clamp(1.25rem, 2.4vw, 1.625rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--hm-ink);
+  max-width: 26ch;
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  font-weight: 500;
+  line-height: 1.14;
+  letter-spacing: -0.028em;
+  color: var(--ink);
 }
 
 .sectionNote {
-  margin: 10px 0 0;
+  margin: 16px 0 0;
+  max-width: 64ch;
   font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--hm-ink-muted);
-  max-width: 62ch;
+  line-height: 1.68;
+  color: var(--muted);
 }
 
+.sectionNote em {
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------ persona cards */
+
 .grid {
-  margin-top: 28px;
+  margin-top: 32px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 18px;
 }
 
 .card {
-  border: 1px solid var(--hm-line);
-  border-radius: var(--hm-radius, 1rem);
-  padding: 24px;
-  background: var(--hm-surface);
+  position: relative;
   display: flex;
   flex-direction: column;
+  border-radius: var(--radius-md);
+  padding: 26px 24px 22px;
+  background: rgba(var(--paper-rgb), 0.86);
+  box-shadow:
+    0 1px 2px rgba(var(--ink-rgb), 0.04),
+    0 18px 40px -22px rgba(var(--ink-rgb), 0.28);
+  transition: transform 160ms ease;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .card {
+    background: rgba(var(--paper-rgb), 0.68);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+  }
+}
+
+.card:hover {
+  transform: scale(1.015);
 }
 
 .cardTab {
   margin: 0;
   font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--hm-ink-muted);
+  color: var(--muted);
 }
 
 .cardName {
-  margin: 10px 0 0;
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--hm-ink);
+  margin: 12px 0 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.028em;
+  color: var(--ink);
 }
 
 .cardWho,
 .cardPain,
 .cardSetup {
-  margin: 10px 0 0;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--hm-ink-soft);
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--muted);
 }
 
 .cardPain {
-  color: var(--hm-ink);
+  color: var(--ink);
 }
 
 .cardFamiliar {
   margin: 14px 0 0;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  color: var(--hm-ink-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--muted);
 }
 
 .cardProof {
-  margin-top: auto;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 20px;
   padding-top: 18px;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: rgb(var(--info-700, 0 74 204));
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  border-top: 1px solid var(--rule);
+  text-decoration: none;
 }
 
+.cardProofLabel {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule);
+}
+
+.cardProof:hover .cardProofLabel {
+  text-decoration-color: var(--ink);
+}
+
+.cardProofHash {
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------- evidence tables */
+
+/*
+ * The load-bearing surface. Kept flat and opaque on purpose — no blur behind a hash.
+ * Rows are a 3-column grid on desktop so numbers, labels and states all line up.
+ */
 .beats {
+  position: relative;
   list-style: none;
-  margin: 28px 0 0;
-  padding: 0;
-  border-top: 1px solid var(--hm-line);
+  margin: 32px 0 0;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: rgba(var(--paper-rgb), 0.92);
+  box-shadow:
+    0 1px 2px rgba(var(--ink-rgb), 0.04),
+    0 20px 46px -26px rgba(var(--ink-rgb), 0.3);
 }
 
 .beat {
-  display: flex;
-  align-items: baseline;
-  gap: 20px;
-  padding: 18px 0;
-  border-bottom: 1px solid var(--hm-line);
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 20px;
+  padding: 15px 16px;
+  border-radius: var(--radius-sm);
+  transition: background-color 160ms ease;
+}
+
+.beat + .beat {
+  box-shadow: inset 0 1px 0 var(--rule);
+}
+
+.beat:hover {
+  background-color: rgba(var(--rule-rgb), 0.34);
 }
 
 .beatIndex {
-  flex-shrink: 0;
-  width: 1.5rem;
-  font-family: var(--font-code);
-  font-size: 0.875rem;
-  color: var(--hm-ink-muted);
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
-.beatBody {
+.beatMain {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 24px;
-  flex: 1;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
 }
 
 .beatLabel {
-  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  font-size: 1rem;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--hm-ink);
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--ink);
 }
 
-.beatFail {
-  color: var(--hm-danger-ink);
-  font-weight: 600;
+.beatSelector {
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
-.beatLink {
-  font-family: var(--font-code);
-  font-size: 0.8125rem;
-  color: rgb(var(--info-700, 0 74 204));
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.beatSide {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* State is never colour alone: glyph + word + colour, all three. */
+.statePass,
+.stateFail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
   white-space: nowrap;
 }
 
+.statePass {
+  color: var(--pass);
+  background: rgba(31, 122, 77, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(31, 122, 77, 0.22);
+}
+
+.stateFail {
+  color: var(--fail);
+  background: rgba(179, 38, 30, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(179, 38, 30, 0.22);
+}
+
+.stateGlyph {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+.beatLink {
+  flex-shrink: 0;
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule);
+  white-space: nowrap;
+  transition: transform 160ms ease;
+}
+
+.beatLink:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+  transform: scale(1.04);
+}
+
+.beatLink:active {
+  transform: scale(0.98);
+}
+
+/* ---------------------------------------------------------------- stat pair */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  background: rgba(var(--paper-rgb), 0.86);
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .stat {
+    background: rgba(var(--paper-rgb), 0.68);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.statValue {
+  font-family: var(--font-hash);
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.statUnit {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------- limits */
+
 .limits {
-  margin: 24px 0 0;
+  margin: 28px 0 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 14px;
+  gap: 16px;
   max-width: 68ch;
 }
 
-.limits li {
-  padding-left: 18px;
+.limit {
   position: relative;
+  padding-left: 22px;
   font-size: 0.9375rem;
-  line-height: 1.55;
-  color: var(--hm-ink-soft);
+  line-height: 1.68;
+  color: var(--muted);
 }
 
-.limits li::before {
+.limit::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.6em;
-  width: 6px;
+  top: 0.76em;
+  width: 10px;
   height: 1px;
-  background: var(--hm-line-strong);
+  background: var(--ink);
+  opacity: 0.4;
 }
 
+/* ------------------------------------------------------------------- footer */
+
 .footer {
+  display: flex;
+  flex-direction: column;
+}
+
+.contracts {
+  position: relative;
   display: grid;
-  gap: 10px;
-  padding-top: 28px;
-  border-top: 1px solid var(--hm-line);
+  gap: 2px;
+  margin-top: 6px;
+  border-radius: var(--radius-md);
+  padding: 6px;
+  background: rgba(var(--paper-rgb), 0.86);
 }
 
 .contract {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  align-items: baseline;
   justify-content: space-between;
-  font-size: 0.8125rem;
+  gap: 4px 20px;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
 }
 
-.contract a {
-  font-family: var(--font-code);
-  color: var(--hm-ink-soft);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  word-break: break-all;
+.contract + .contract {
+  box-shadow: inset 0 1px 0 var(--rule);
 }
 
 .contractLabel {
-  color: var(--hm-ink-muted);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.contractLink {
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.contractLink:hover {
+  text-decoration-color: var(--ink);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 720px) {
+  .page {
+    padding: 8px 8px 0;
+  }
+
+  .heroInner {
+    padding: 22px 20px 36px;
+  }
+
+  .nav {
+    margin-bottom: 48px;
+  }
+
+  .body {
+    padding: 56px 14px 72px;
+    gap: 64px;
+  }
+
+  .beats {
+    padding: 4px;
+  }
+
+  /* Two rows on a phone: number + label, then state + hash beneath. */
+  .beat {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: start;
+    padding: 15px 13px;
+    gap: 10px 12px;
+  }
+
+  .beatIndex {
+    padding-top: 0.18em;
+  }
+
+  .beatSide {
+    grid-column: 2;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .beatLink {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .contract {
+    padding: 12px 13px;
+  }
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .card,
+  .beat,
+  .beatLink {
+    transition: none;
+  }
+
+  .cta:hover,
+  .cta:active,
+  .card:hover,
+  .beatLink:hover,
+  .beatLink:active {
+    transform: none;
+  }
 }

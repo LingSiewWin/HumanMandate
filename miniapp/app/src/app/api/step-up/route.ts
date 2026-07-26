@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'MANDATE_ADDRESS not configured' }, { status: 500 });
   }
 
-  // Reject proofs minted for a different Portal action (e.g. legacy first-stock-eligibility).
+  // Reject proofs minted for a different Portal action.
   if (idkitResponse.action && idkitResponse.action !== EXPECTED_STEPUP_ACTION) {
     return NextResponse.json(
       {

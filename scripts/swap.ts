@@ -1,5 +1,5 @@
 /**
- * First Stock — Uniswap Trading API swap script (M3 lego).
+ * Uniswap Trading API swap script.
  * Flow per official skill: /check_approval → /quote → /swap → broadcast.
  *
  * Usage:

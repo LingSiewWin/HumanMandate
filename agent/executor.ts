@@ -4,9 +4,6 @@
  * Authority: HumanMandate on World Chain mainnet (480) — authorize by humanId,
  * pull as AgentBook-backed agent, revoke as payer.
  *
- * NOTE: Previous version targeted DcaLeash / First Stock (wrong product). That ABI
- * is gone from this file.
- *
  * Usage:
  *   bun run executor.ts status
  *   bun run executor.ts authorize <humanId> <dailyCapWei>

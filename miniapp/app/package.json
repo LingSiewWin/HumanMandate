@@ -1,8 +1,8 @@
 {
-  "name": "@worldcoin/next-15-template",
+  "name": "human-mandate",
   "version": "0.1.0",
   "homepage": "https://docs.worldcoin.org/mini-apps",
-  "description": "Create a Mini App",
+  "description": "HumanMandate — a spending authority bound to a human, enforced on-chain",
   "license": "MIT",
   "private": true,
   "type": "module",

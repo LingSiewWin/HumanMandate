@@ -1,0 +1,8 @@
+# Foundry deps are not committed — run ./bootstrap.sh after cloning.
+lib/
+out/
+cache/
+broadcast/
+
+# Root .gitignore hides every *.md; this one must ship so judges can build.
+!README.md

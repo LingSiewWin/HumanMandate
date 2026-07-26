@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { ActivityItem } from '@/lib/activity';
-import { DEMO_TOKEN_SYMBOL, explorerTx } from '@/lib/mandate';
+import { DEMO_TOKEN_ADDRESS, DEMO_TOKEN_SYMBOL, explorerTx } from '@/lib/mandate';
+import { TOKEN_IN, TOKEN_OUT } from '@/lib/swapper';
 import styles from './Activity.module.css';
 
 type ActivityFeedProps = {
@@ -12,13 +13,33 @@ type ActivityFeedProps = {
   refreshKey?: number;
 };
 
+/**
+ * Keep small amounts legible. Truncating to two decimals turned a real 0.0005 WETH
+ * charge into "0.00", which reads as though nothing was spent, so the fraction is
+ * kept until it carries two significant digits.
+ */
 function formatAmount(raw: string, decimals = 18): string {
   const negative = raw.startsWith('-');
   const digits = (negative ? raw.slice(1) : raw).padStart(decimals + 1, '0');
   const whole = digits.slice(0, digits.length - decimals);
   const frac = digits.slice(digits.length - decimals).replace(/0+$/, '');
-  const shown = frac ? `${whole}.${frac.slice(0, 2)}` : whole;
+  let shown = whole;
+  if (frac) {
+    const leadingZeros = frac.length - frac.replace(/^0+/, '').length;
+    shown = `${whole}.${frac.slice(0, leadingZeros + 2)}`;
+  }
   return negative ? `-${shown}` : shown;
+}
+
+/** The feed spans several mandates, and they do not all spend the same token. */
+function tokenLabel(token?: string): { symbol: string; decimals: number } {
+  const at = (token ?? '').toLowerCase();
+  if (at === TOKEN_IN.address.toLowerCase()) return TOKEN_IN;
+  if (at === TOKEN_OUT.address.toLowerCase()) return TOKEN_OUT;
+  if (at === DEMO_TOKEN_ADDRESS.toLowerCase()) {
+    return { symbol: DEMO_TOKEN_SYMBOL, decimals: 18 };
+  }
+  return { symbol: '', decimals: 18 };
 }
 
 function short(addr?: string): string {
@@ -112,7 +133,8 @@ export function ActivityFeed({ wallet, refreshKey = 0 }: ActivityFeedProps) {
                   }`}
                 >
                   {item.kind === 'pulled' ? '−' : ''}
-                  {formatAmount(item.amount)} {DEMO_TOKEN_SYMBOL}
+                  {formatAmount(item.amount, tokenLabel(item.token).decimals)}{' '}
+                  {tokenLabel(item.token).symbol}
                 </span>
               )}
             </li>

@@ -19,6 +19,7 @@ import {
 } from '@/lib/mandate';
 import { ActivityFeed } from '@/components/Activity';
 import { Handoff } from '@/components/Handoff';
+import { RoutePanel } from '@/components/Route';
 import { ScenarioStrip } from '@/components/Scenarios';
 import { defaultScenario, getScenario, type ScenarioId } from '@/lib/scenarios';
 import { useWalletAddress } from '@/hooks/useWalletAddress';
@@ -485,6 +486,8 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
       </section>
 
       <Handoff wallet={wallet} mandate={mandate} />
+
+      <RoutePanel wallet={wallet} refreshKey={chainVersion} />
 
       <ActivityFeed wallet={wallet} refreshKey={chainVersion} />
 

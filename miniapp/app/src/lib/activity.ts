@@ -35,6 +35,10 @@ export type ActivityItem = {
   detail: string;
   /** Token amount in base units, when the event moves money. */
   amount?: string;
+  /** The mandate this event belongs to. One payer runs several, each with its own token. */
+  mandateId?: string;
+  /** Only the Authorized event names the token, so it is filled in per mandate below. */
+  token?: string;
   agent?: string;
   recipient?: string;
   blockNumber: number;
@@ -90,6 +94,7 @@ function decodePulled(log: RawLog): ActivityItem {
     title: 'Your card was charged',
     detail: 'An agent of the authorised person spent inside the limit.',
     amount: amount.toString(),
+    mandateId: log.topics[2] ?? undefined,
     agent,
     recipient,
     blockNumber: Number(log.blockNumber),
@@ -99,7 +104,7 @@ function decodePulled(log: RawLog): ActivityItem {
 
 function decodeAuthorized(log: RawLog): ActivityItem {
   // Authorized(payer indexed, mandateId indexed, humanRef, token, windowCap, perTxCap, recipient)
-  const [, , cap, perTx, recipient] = decodeAbiParameters(
+  const [, token, cap, perTx, recipient] = decodeAbiParameters(
     parseAbiParameters('bytes32, address, uint128, uint128, address'),
     log.data,
   );
@@ -112,6 +117,8 @@ function decodeAuthorized(log: RawLog): ActivityItem {
     title: 'Card created',
     detail: `Locked to one payee. ${perTxNote}`,
     amount: cap.toString(),
+    mandateId: log.topics[2] ?? undefined,
+    token,
     recipient,
     blockNumber: Number(log.blockNumber),
     txHash: log.transactionHash,
@@ -129,6 +136,7 @@ function decodeRaised(log: RawLog): ActivityItem {
     title: 'Limit raised',
     detail: 'You passed a fresh Selfie Check to widen this card.',
     amount: cap.toString(),
+    mandateId: log.topics[2] ?? undefined,
     recipient,
     blockNumber: Number(log.blockNumber),
     txHash: log.transactionHash,
@@ -140,6 +148,7 @@ function decodeRevoked(log: RawLog): ActivityItem {
     kind: 'revoked',
     title: 'Card stopped',
     detail: 'Every agent that person will ever operate lost access here.',
+    mandateId: log.topics[2] ?? undefined,
     blockNumber: Number(log.blockNumber),
     txHash: log.transactionHash,
   };
@@ -166,6 +175,20 @@ export async function readActivity(payer: string): Promise<ActivityItem[]> {
     ...revoked.map(decodeRevoked),
     ...raised.map(decodeRaised),
   ];
+
+  // Only Authorized names the token, but a payer's mandates do not all spend the same
+  // one. Without this the feed would label a WETH charge with the other card's symbol.
+  const tokenByMandate = new Map<string, string>();
+  for (const item of items) {
+    if (item.kind === 'authorized' && item.mandateId && item.token) {
+      tokenByMandate.set(item.mandateId, item.token);
+    }
+  }
+  for (const item of items) {
+    if (!item.token && item.mandateId) {
+      item.token = tokenByMandate.get(item.mandateId);
+    }
+  }
 
   return items.sort((a, b) => b.blockNumber - a.blockNumber);
 }

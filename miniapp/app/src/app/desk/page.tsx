@@ -7,6 +7,7 @@ import {
   demoBeats,
   type DemoBeat,
 } from '@/lib/mandate';
+import { QUOTED_OUT, RECEIVED_OUT, SWAPPER_ADDRESS, swapProofs } from '@/lib/swapper';
 import { scenarios } from '@/lib/scenarios';
 import type { Metadata } from 'next';
 import styles from './desk.module.css';
@@ -104,6 +105,51 @@ export default function DeskPage() {
       </section>
 
       <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>
+          A ceiling on what goes out is not enough once there is a swap in the middle
+        </h2>
+        <p className={styles.sectionNote}>
+          A daily cap counts what <em>leaves</em> the payer. Put a swap between the agent and the
+          payee and the cap stops protecting anything: an agent can stay under it forever and
+          still drain value by routing through a bad pool, because the cap never looks at what
+          comes back. So the contract is given a floor, and it measures the amount the payee
+          actually receives. A cap with no floor on the output is not a cap.
+        </p>
+        <p className={styles.sectionNote}>
+          The route is a real Uniswap Trading API response — CLASSIC routing, 1054 bytes of
+          calldata. The transaction that matters is the fourth one: the contract refusing to
+          settle.
+        </p>
+        <ol className={styles.beats}>
+          {swapProofs.map((b, i) => (
+            <li key={b.tx} className={styles.beat}>
+              <span className={styles.beatIndex}>{i + 1}</span>
+              <span className={styles.beatBody}>
+                <span
+                  className={`${styles.beatLabel} ${b.refused ? styles.beatFail : ''}`}
+                >
+                  {b.label}
+                  {b.selector ? ` — ${b.selector}` : ''}
+                </span>
+                <a
+                  className={styles.beatLink}
+                  href={explorerTx(b.tx)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {b.refused ? 'Refused' : 'Settled'} · {b.tx.slice(0, 10)}…{b.tx.slice(-6)}
+                </a>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className={styles.sectionNote}>
+          Quoted {QUOTED_OUT} base units, paid {RECEIVED_OUT}. Every other swap demo ends in a
+          successful swap; this one is worth more because it ends in a refused one.
+        </p>
+      </section>
+
+      <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Three things we do not claim</h2>
         <ul className={styles.limits}>
           <li>
@@ -126,6 +172,12 @@ export default function DeskPage() {
           <span className={styles.contractLabel}>Mandate</span>
           <a href={explorerAddress(MANDATE_ADDRESS)} target="_blank" rel="noreferrer">
             {MANDATE_ADDRESS}
+          </a>
+        </div>
+        <div className={styles.contract}>
+          <span className={styles.contractLabel}>Swapper</span>
+          <a href={explorerAddress(SWAPPER_ADDRESS)} target="_blank" rel="noreferrer">
+            {SWAPPER_ADDRESS}
           </a>
         </div>
         <div className={styles.contract}>

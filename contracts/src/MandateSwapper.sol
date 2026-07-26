@@ -25,6 +25,15 @@ import {IHumanRegistry} from "./interfaces/IHumanRegistry.sol";
 ///         Funds parked here between the two legs are not loose: `settle` repeats the same
 ///         human check the mandate performs, so only the authorised person can move them, and
 ///         only ever to the payee the payer chose.
+///
+///         KNOWN LIMITATION, disclosed rather than hidden. `settle` takes the contract's whole
+///         `tokenIn` balance as its input and only the OUTPUT is measured as a delta. With two
+///         live mandates parked in the same token at the same time, one mandate's agent could
+///         route the other's tokens and deliver the proceeds to its own payee. The output floor
+///         does not help here because it constrains value received, not whose value was spent.
+///         The fix is per-mandate input accounting; it is not built. Until it is, funds should
+///         not be left parked between the two legs, and a payer should not run two mandates
+///         through this contract in the same token concurrently.
 contract MandateSwapper {
     using SafeERC20 for IERC20;
 
@@ -76,8 +85,11 @@ contract MandateSwapper {
     }
 
     /// @notice The payer declares what this mandate's spending converts into, and who receives it.
-    /// @param  humanRef The same reference the payer authorised on the mandate. Repeated here so
-    ///         `settle` can authenticate without reading the mandate's storage layout.
+    /// @param  humanRef This contract's reference for the authorised person — read it from
+    ///         `refOf`, NOT from the mandate. Both contracts hash `address(this)` into the
+    ///         reference, so the same human has a different one in each, deliberately: it keeps
+    ///         the raw nullifier from becoming a handle that links a person across deployments.
+    ///         Passing the mandate's reference here would simply never match.
     function setRoute(
         bytes32 mandateId,
         bytes32 humanRef,

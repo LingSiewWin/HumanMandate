@@ -22,18 +22,31 @@ import {IHumanRegistry} from "./interfaces/IHumanRegistry.sol";
 ///         obedient, the amount received does not. A cap without a floor on the output is not a
 ///         cap. `settle` therefore refuses unless the measured output clears `minOut`.
 ///
-///         Funds parked here between the two legs are not loose: `settle` repeats the same
-///         human check the mandate performs, so only the authorised person can move them, and
-///         only ever to the payee the payer chose.
+///         KNOWN VULNERABILITY, found in our own audit and disclosed rather than hidden.
+///         Anything parked in this contract between the two legs can be taken by any address
+///         with a nonzero AgentBook humanId. Three facts combine:
 ///
-///         KNOWN LIMITATION, disclosed rather than hidden. `settle` takes the contract's whole
-///         `tokenIn` balance as its input and only the OUTPUT is measured as a delta. With two
-///         live mandates parked in the same token at the same time, one mandate's agent could
-///         route the other's tokens and deliver the proceeds to its own payee. The output floor
-///         does not help here because it constrains value received, not whose value was spent.
-///         The fix is per-mandate input accounting; it is not built. Until it is, funds should
-///         not be left parked between the two legs, and a payer should not run two mandates
-///         through this contract in the same token concurrently.
+///           1. `setRoute` has no access control and takes `humanRef` as an argument, so an
+///              attacker sets a route of their own with `refOf(attacker)` and their own payee.
+///           2. `settle` then compares `refOf(msg.sender)` against that same value. The check
+///              is a mirror; it always passes. There is no second mandate and no relationship
+///              to any payer involved.
+///           3. `amountIn` is this contract's whole `tokenIn` balance, `minOut` is chosen by
+///              the caller, and `routerCalldata` is unconstrained. `primeRouter` has granted
+///              the router an unlimited, non-expiring Permit2 allowance, so a single transfer
+///              command empties the contract with `amountOut == 0`.
+///
+///         The output floor does not help: it constrains value received, not whose value was
+///         spent, and the caller picks the floor.
+///
+///         The fix is four parts and is NOT built: authenticate `setRoute` against
+///         HumanMandate and read `humanRef` from the mandate; escrow per (payer, mandateId);
+///         approve exactly `amountIn` immediately before the router call and reset to zero
+///         after, deleting the standing allowance; move the floor into the payer-set `Route`.
+///         Cleaner still, do not park funds at all.
+///
+///         Until that lands, nothing should be left sitting in this contract between the two
+///         legs. The comment this replaced claimed the opposite, and was wrong.
 contract MandateSwapper {
     using SafeERC20 for IERC20;
 
@@ -56,8 +69,10 @@ contract MandateSwapper {
         address payee
     );
 
-    /// @notice The venue. Immutable: if the agent could name the router, it could name a
-    ///         contract of its own and `minOut` would be checked against a token it minted.
+    /// @notice The venue, fixed at construction so the agent cannot name a contract of its own
+    ///         and have `minOut` checked against a token it minted. Note this buys less than it
+    ///         appears: arbitrary calldata to a router holding a standing allowance is still
+    ///         close to arbitrary control of this contract's tokens.
     address public immutable router;
     /// @notice Permit2, which the router pulls through. Approved once per token, by anyone.
     address public immutable permit2;
@@ -71,8 +86,9 @@ contract MandateSwapper {
         bool set;
     }
 
-    /// @notice Set by the payer, never by the agent. The agent chooses timing and route
-    ///         calldata; it does not choose what it buys or who receives it.
+    /// @notice Keyed by whoever called `setRoute`, which today is anybody — see the KNOWN
+    ///         VULNERABILITY above. For the payer's OWN slot the intent holds: the agent
+    ///         chooses timing and route calldata, not what is bought or who receives it.
     mapping(address payer => mapping(bytes32 mandateId => Route)) public routes;
 
     constructor(address router_, address permit2_, IHumanRegistry registry_) {
@@ -118,8 +134,10 @@ contract MandateSwapper {
         }
     }
 
-    /// @notice One-time plumbing so the router can pull from this contract. Callable by anyone
-    ///         because it grants nothing that is not already implied by the router being fixed.
+    /// @notice One-time plumbing so the router can pull from this contract. It grants the
+    ///         router an UNLIMITED, non-expiring Permit2 allowance over this contract's balance,
+    ///         which is the payload that makes the vulnerability above drainable rather than
+    ///         merely misdirectable. A fixed version approves exactly `amountIn` per settle.
     function primeRouter(address token) external {
         IERC20(token).forceApprove(permit2, type(uint256).max);
         // Permit2's own allowance, which is what the Universal Router actually spends against.
@@ -132,8 +150,10 @@ contract MandateSwapper {
     }
 
     /// @notice Convert whatever this mandate has parked here and forward it to the payer's payee.
-    /// @param  minOut The floor the payer's agent commits to. Enforced against the *measured*
-    ///         balance change, not against anything the router reports about itself.
+    /// @param  minOut The floor, enforced against the *measured* balance change rather than
+    ///         anything the router reports about itself. It is supplied by the caller, i.e. by
+    ///         the party it exists to constrain, so a malicious agent passes 0 and the check is
+    ///         a no-op. It belongs in the payer-set `Route`; that is not built.
     function settle(address payer, bytes32 mandateId, uint256 minOut, bytes calldata routerCalldata)
         external
         returns (uint256 amountOut)

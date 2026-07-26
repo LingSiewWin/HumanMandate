@@ -141,3 +141,10 @@ every failure carries a `detail` field.
 | Permit2 approval topology | [`contracts/src/MandateSwapper.sol`](contracts/src/MandateSwapper.sol) | 123–132 |
 
 `MandateSwapper` on World Chain mainnet: `0x4054fC0708799B906276984575cDfaBbe1Df45e9`
+
+## Form submission
+
+This feedback was also submitted through the Uniswap Developer Feedback Form at
+`https://developers.uniswap.org/hackathon-feedback`, with a link back to this file.
+
+![Uniswap Developer Feedback Form — submission confirmed](assets/evidence/uniswap-feedback-submitted.png)

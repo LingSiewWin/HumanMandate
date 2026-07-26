@@ -236,6 +236,157 @@
   color: var(--hm-ink-muted);
 }
 
+.setup {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  background: var(--hm-surface);
+  border: 1px solid var(--hm-line);
+  border-radius: var(--hm-radius, 1rem);
+}
+
+.setupTitle {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink);
+}
+
+.setupIntro {
+  margin: -4px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--hm-ink-muted);
+}
+
+.modeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.modeBtn {
+  appearance: none;
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px solid var(--hm-line);
+  border-radius: var(--hm-radius-sm, 0.625rem);
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--hm-ink-muted);
+}
+
+.modeBtnActive {
+  border-color: var(--hm-ink);
+  background: var(--hm-fill);
+  color: var(--hm-ink);
+}
+
+.codeLine {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--hm-radius-sm, 0.625rem);
+  background: var(--hm-fill);
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--hm-ink);
+  word-break: break-word;
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--hm-danger-ink);
+}
+
+.demoWarn {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--hm-radius-sm, 0.625rem);
+  background: var(--hm-warning-bg, var(--hm-fill));
+  border: 1px solid var(--hm-warning-ink, var(--hm-line));
+}
+
+.demoWarnTitle {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hm-warning-ink);
+}
+
+.demoWarnBody {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--hm-ink);
+}
+
+.idValue {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--hm-ink-soft);
+  word-break: break-all;
+}
+
+.ackRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--hm-ink);
+  cursor: pointer;
+}
+
+.ackBox {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--hm-ink);
+}
+
+.disclosure {
+  padding-top: 14px;
+  border-top: 1px solid var(--hm-line);
+}
+
+.disclosureList {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.disclosureRow {
+  display: grid;
+  gap: 2px;
+}
+
+.disclosureLabel {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hm-ink-muted);
+}
+
+.disclosureValue {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--hm-ink);
+  word-break: break-word;
+}
+
 .userOp {
   margin: 0;
   padding: 12px 14px;

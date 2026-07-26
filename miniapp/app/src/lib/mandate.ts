@@ -19,16 +19,24 @@ export const MANDATE_CHAIN_ID = Number(process.env.NEXT_PUBLIC_MANDATE_CHAIN_ID 
 export const DEMO_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_DEMO_TOKEN_ADDRESS ??
   '0xA471D2C45F03518E47c7Fc71C897d244dF01859D') as `0x${string}`;
 
+/** Test token, not real money. Shown to the user before they sign. */
+export const DEMO_TOKEN_SYMBOL = process.env.NEXT_PUBLIC_DEMO_TOKEN_SYMBOL ?? 'DemoUSD';
+
 /**
- * Orb humanId used for hackathon authorize-on-phone.
- * Same person as AgentBook demo (HANDOFF); World App wallet can bind this mandate
- * so raiseLimits Selfie E2E is possible when wallet ≠ CLI demo payer.
+ * humanId of the PROJECT'S OWN demo agent operator — i.e. a third party from the
+ * point of view of anyone else opening the mini-app.
+ *
+ * Authorizing this id lets that person's registered agents pull from the signer's
+ * wallet. It is therefore only ever used behind the explicitly labelled "demo agent"
+ * path in components/Mandate, which discloses the id, the cap, the payee and the
+ * revoke path before the user signs. Never make it the silent default.
  */
-export const DEMO_HUMAN_ID = BigInt(
+export const DEMO_AGENT_HUMAN_ID = BigInt(
   process.env.NEXT_PUBLIC_DEMO_HUMAN_ID ??
     '674286712274374622200600850590512922406691432103577922617674776808416716138',
 );
 
+/** Fixed payee of the demo mandate — the only address a demo agent can pay. */
 export const DEMO_RECIPIENT = (process.env.NEXT_PUBLIC_DEMO_RECIPIENT ??
   '0x1eBd8D2862c66b335D3CDB2f3479ee6B42DE69aD') as `0x${string}`;
 
@@ -193,9 +201,6 @@ export const newFiveBeat: readonly DemoBeat[] = [
     tx: '0x73db31754625ace1dc5ef9b98eb1188c609831afd291be6197de601f22b22208',
   },
 ] as const;
-
-/** @deprecated Prefer oldFiveBeat + newFiveBeat + newStepUp. Kept for import compatibility. */
-export const DEMO_BEATS = [...oldFiveBeat, ...newFiveBeat, ...newStepUp] as const;
 
 export type MandateView = {
   humanId: string;

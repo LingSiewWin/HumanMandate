@@ -1,10 +1,11 @@
 'use client';
 
 import {
-  DEMO_HUMAN_ID,
+  DEMO_AGENT_HUMAN_ID,
   DEMO_INITIAL_CAP,
   DEMO_RECIPIENT,
   DEMO_TOKEN_ADDRESS,
+  DEMO_TOKEN_SYMBOL,
   MANDATE_ADDRESS,
   MANDATE_CHAIN_ID,
   OLD_MANDATE_ADDRESS,
@@ -40,6 +41,14 @@ function short(addr: string): string {
   if (!addr || addr.length < 12) return addr;
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
+
+/** Person IDs are 70+ digit numbers — head/tail so a user can compare two by eye. */
+function shortId(id: string): string {
+  if (!id || id.length <= 20) return id;
+  return `${id.slice(0, 10)}…${id.slice(-8)}`;
+}
+
+const MAX_HUMAN_ID = BigInt(2) ** BigInt(256);
 
 function formatUnitsLoose(raw: string, decimals = 18): string {
   try {
@@ -92,6 +101,23 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const [newCap, setNewCap] = useState(defaultScenario.dailyLimit);
   const [newRecipient, setNewRecipient] = useState('');
   const [scenarioId, setScenarioId] = useState<ScenarioId>(defaultScenario.id);
+  const [agentOwner, setAgentOwner] = useState<'mine' | 'demo'>('mine');
+  const [ownHumanId, setOwnHumanId] = useState('');
+  const [demoAck, setDemoAck] = useState(false);
+
+  /** Whose assistant the user is about to let spend. null = nothing valid entered yet. */
+  const ownHumanIdValue = useMemo(() => {
+    const raw = ownHumanId.trim();
+    if (!/^\d+$/.test(raw)) return null;
+    const value = BigInt(raw);
+    if (value <= BigInt(0) || value >= MAX_HUMAN_ID) return null;
+    return value;
+  }, [ownHumanId]);
+
+  const authorizedHumanId = agentOwner === 'demo' ? DEMO_AGENT_HUMAN_ID : ownHumanIdValue;
+  const canAuthorize =
+    Boolean(wallet) && authorizedHumanId !== null && (agentOwner !== 'demo' || demoAck);
+  const startingCap = formatUnitsLoose(DEMO_INITIAL_CAP.toString());
 
   const onPickScenario = (id: ScenarioId) => {
     setScenarioId(id);
@@ -177,18 +203,28 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
     setLastUserOpHash(result.data.userOpHash);
   };
 
-  /** World wallet must own an active mandate before raiseLimits — CLI demo payer ≠ phone wallet. */
+  /**
+   * Grants a standing pull on THIS wallet to every agent registered by one person.
+   * The humanId is never implicit: it is either one the user pasted, or the project's
+   * demo operator behind an explicit, disclosed opt-in.
+   */
   const onAuthorize = async () => {
     setBusy('authorize');
     setFeedback('pending');
     setErrorMsg(undefined);
     try {
       if (!wallet) throw new Error('No wallet address — open in World App and sign in');
+      if (authorizedHumanId === null) {
+        throw new Error('Paste the Person ID of the assistant you want to allow');
+      }
+      if (agentOwner === 'demo' && !demoAck) {
+        throw new Error('Tick the box to confirm you are allowing the demo assistant');
+      }
       await sendCall(
         encodeFunctionData({
           abi: mandateAbi,
           functionName: 'authorize',
-          args: [DEMO_HUMAN_ID, DEMO_TOKEN_ADDRESS, DEMO_INITIAL_CAP, DEMO_RECIPIENT],
+          args: [authorizedHumanId, DEMO_TOKEN_ADDRESS, DEMO_INITIAL_CAP, DEMO_RECIPIENT],
         }),
       );
     } catch (e) {
@@ -442,20 +478,140 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         )}
 
         {(!hasMandate || (mandate && !mandate.active)) && (
-          <div className={styles.stepUp}>
+          <div className={styles.setup}>
+            <h3 className={styles.setupTitle}>Turn on the card</h3>
+            <p className={styles.setupIntro}>
+              You are about to let one person&rsquo;s assistant spend out of your wallet. Pick whose
+              assistant that is — there is no default.
+            </p>
+
+            <div className={styles.modeRow} role="group" aria-label="Whose assistant">
+              <button
+                type="button"
+                className={`${styles.modeBtn} ${agentOwner === 'mine' ? styles.modeBtnActive : ''}`}
+                aria-pressed={agentOwner === 'mine'}
+                onClick={() => setAgentOwner('mine')}
+              >
+                My assistant
+              </button>
+              <button
+                type="button"
+                className={`${styles.modeBtn} ${agentOwner === 'demo' ? styles.modeBtnActive : ''}`}
+                aria-pressed={agentOwner === 'demo'}
+                onClick={() => setAgentOwner('demo')}
+              >
+                The demo assistant
+              </button>
+            </div>
+
+            {agentOwner === 'mine' ? (
+              <div className={styles.fieldStack}>
+                <Input
+                  label="Person ID of the assistant's owner"
+                  value={ownHumanId}
+                  onChange={(e) => setOwnHumanId(e.target.value.replace(/[^\d]/g, ''))}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <p className={styles.hint}>
+                  On a computer, run this once and it prints your long Person ID number:
+                </p>
+                <code className={styles.codeLine}>
+                  npx @worldcoin/agentkit-cli register &lt;your assistant&rsquo;s wallet address&gt;
+                </code>
+                <p className={styles.hint}>
+                  Paste that number here. It is the person World will let spend — so it should be
+                  you.
+                </p>
+                {ownHumanId.length > 0 && ownHumanIdValue === null && (
+                  <p className={styles.fieldError}>
+                    That is not a Person ID yet — it is a long number, digits only.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className={styles.demoWarn}>
+                <p className={styles.demoWarnTitle}>Demo — this is not you</p>
+                <p className={styles.demoWarnBody}>
+                  This lets the assistant of the person who built this app spend out of{' '}
+                  <strong>your</strong> wallet, up to the limit below, so you can watch the limit and
+                  the stop button work for real. Their Person ID:
+                </p>
+                <span className={styles.idValue}>{DEMO_AGENT_HUMAN_ID.toString()}</span>
+                <label className={styles.ackRow}>
+                  <input
+                    type="checkbox"
+                    className={styles.ackBox}
+                    checked={demoAck}
+                    onChange={(e) => setDemoAck(e.target.checked)}
+                  />
+                  <span>
+                    I understand I am allowing someone else&rsquo;s assistant, and I can stop it at
+                    any time.
+                  </span>
+                </label>
+              </div>
+            )}
+
+            <div className={styles.disclosure}>
+              <p className={styles.sectionLabel}>What you are signing</p>
+              <dl className={styles.disclosureList}>
+                <div className={styles.disclosureRow}>
+                  <dt className={styles.disclosureLabel}>Who can spend</dt>
+                  <dd className={styles.disclosureValue}>
+                    {agentOwner === 'demo'
+                      ? `The app team's assistant · ${shortId(DEMO_AGENT_HUMAN_ID.toString())}`
+                      : ownHumanIdValue !== null
+                        ? `Assistants owned by ${shortId(ownHumanIdValue.toString())}`
+                        : 'Nobody yet — paste a Person ID above'}
+                  </dd>
+                </div>
+                <div className={styles.disclosureRow}>
+                  <dt className={styles.disclosureLabel}>How much</dt>
+                  <dd className={styles.disclosureValue}>
+                    Up to {startingCap} {DEMO_TOKEN_SYMBOL} a day ({DEMO_TOKEN_SYMBOL} is test
+                    money, not real funds)
+                  </dd>
+                </div>
+                <div className={styles.disclosureRow}>
+                  <dt className={styles.disclosureLabel}>Where it can go</dt>
+                  <dd className={styles.disclosureValue}>
+                    Only to{' '}
+                    <a
+                      className={styles.beatLink}
+                      href={explorerAddress(DEMO_RECIPIENT)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {short(DEMO_RECIPIENT)}
+                    </a>
+                    {' — no other address'}
+                  </dd>
+                </div>
+                <div className={styles.disclosureRow}>
+                  <dt className={styles.disclosureLabel}>How to stop it</dt>
+                  <dd className={styles.disclosureValue}>
+                    Tap <strong>Stop spending</strong> below. It takes effect straight away, and it
+                    stops every assistant that person owns — new addresses included.
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
             <Button
               type="button"
               variant="primary"
               size="lg"
               fullWidth
               onClick={() => void onAuthorize()}
-              disabled={!!busy || !wallet}
+              disabled={!!busy || !canAuthorize}
             >
               Turn on card
             </Button>
             <p className={styles.hint}>
-              Sets a daily limit and locked payee on this World wallet. Needs Dev Portal contract
-              whitelist or sendTransaction fails.
+              Nothing is signed until you confirm in World App. The contract must be whitelisted in
+              the Dev Portal or the transaction will not be offered.
             </p>
           </div>
         )}
@@ -516,13 +672,18 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             <div className={styles.advancedIds}>
               <p className={styles.sectionLabel}>Advanced</p>
               <div className={styles.contractRow}>
-                <span className={styles.contractLabel}>Person ID</span>
-                <span className={styles.metricValue}>{mandate.humanId}</span>
+                <span className={styles.contractLabel}>Allowed to spend (Person ID)</span>
+                <span className={styles.metricValue}>{shortId(mandate.humanId)}</span>
               </div>
               <div className={styles.contractRow}>
                 <span className={styles.contractLabel}>Your account</span>
                 <span className={styles.metricValue}>{wallet ? short(wallet) : '—'}</span>
               </div>
+              <p className={styles.hint}>
+                The Person ID is the number World gives this app for one person. It is not a name or
+                a wallet, but it is written into the contract, so anyone reading the chain can see
+                which mandates that person holds. Only the ones you turned on.
+              </p>
               <p className={styles.hint}>
                 Face check re-authenticates before raising limits — not Orb-grade Proof of Human.
                 Contract must be whitelisted in Dev Portal for sendTransaction; without face check

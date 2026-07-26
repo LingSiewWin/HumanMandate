@@ -33,3 +33,5 @@ nullifiers.json
 
 # local browser / MCP artifacts
 .playwright-mcp/
+
+nullifiers.json

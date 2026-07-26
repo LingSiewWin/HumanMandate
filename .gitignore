@@ -7,7 +7,7 @@
 
 # ── private docs: only README.md is public ──
 *.md
-!README.md
+!/README.md
 docs/
 CLAUDE.md
 .claude/

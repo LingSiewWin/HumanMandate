@@ -7,7 +7,13 @@ import {
   demoBeats,
   type DemoBeat,
 } from '@/lib/mandate';
-import { QUOTED_OUT, RECEIVED_OUT, SWAPPER_ADDRESS, swapProofs } from '@/lib/swapper';
+import {
+  QUOTED_OUT,
+  RECEIVED_OUT,
+  REFUSED_FLOOR,
+  SWAPPER_ADDRESS,
+  swapProofs,
+} from '@/lib/swapper';
 import { scenarios } from '@/lib/scenarios';
 import type { Metadata } from 'next';
 import styles from './desk.module.css';
@@ -200,9 +206,14 @@ export default function DeskPage() {
           </ol>
           <div className={styles.stats}>
             <div className={styles.stat}>
-              <span className={styles.statLabel}>Floor demanded, then refused</span>
+              <span className={styles.statLabel}>Route could pay</span>
               <span className={styles.statValue}>{QUOTED_OUT}</span>
               <span className={styles.statUnit}>base units quoted</span>
+            </div>
+            <div className={styles.stat}>
+              <span className={styles.statLabel}>Floor demanded &mdash; refused</span>
+              <span className={styles.statValue}>{REFUSED_FLOOR}</span>
+              <span className={styles.statUnit}>base units required</span>
             </div>
             <div className={styles.stat}>
               <span className={styles.statLabel}>Paid to the payee</span>

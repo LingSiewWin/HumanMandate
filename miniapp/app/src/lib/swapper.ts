@@ -128,8 +128,15 @@ export const swapProofs: readonly SwapProof[] = [
   },
 ] as const;
 
-/** Quoted output in base units; the payee actually received 939127. */
+/** What the Uniswap route quoted, in USDC.e base units. */
 export const QUOTED_OUT = '939042';
+/**
+ * The floor the refused settle demanded — deliberately double the quote, so the
+ * contract had to turn it down. Both figures appear in the revert data of
+ * `SlippageTooHigh(received 939042, minOut 1878084)`.
+ */
+export const REFUSED_FLOOR = '1878084';
+/** What the payee actually received; slightly ahead of the quote. */
 export const RECEIVED_OUT = '939127';
 
 export type RouteView = {

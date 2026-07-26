@@ -38,3 +38,7 @@ nullifiers.json
 .playwright-mcp/
 
 nullifiers.json
+
+# stray screenshots from browser automation
+*.png
+!miniapp/app/public/**/*.png

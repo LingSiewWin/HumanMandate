@@ -1,7 +1,6 @@
 import {
   AGENTBOOK_ADDRESS,
   MANDATE_ADDRESS,
-  MANDATE_CHAIN_ID,
   REGISTRY_ADDRESS,
   explorerAddress,
   explorerTx,
@@ -9,14 +8,9 @@ import {
   type DemoBeat,
 } from '@/lib/mandate';
 import {
-  QUOTED_OUT,
-  RECEIVED_OUT,
-  REFUSED_FLOOR,
   SWAPPER_ADDRESS,
-  TOKEN_OUT,
   swapProofs,
 } from '@/lib/swapper';
-import { scenarios } from '@/lib/scenarios';
 import type { Metadata } from 'next';
 import styles from './desk.module.css';
 
@@ -29,86 +23,22 @@ export const metadata: Metadata = {
 const APP_ID = process.env.NEXT_PUBLIC_APP_ID ?? 'app_0e123e45e449778a4ddb154d1fa4d24c';
 
 /**
- * World's Quick Action deep link. `path` is URL-encoded per the docs and lands the
- * visitor on the card itself rather than the app's default screen.
- *
- * The host is `world.org` because that is what MiniKit's own `getMiniAppUrl` builds;
- * one World docs page uses `worldcoin.org` for the same link, and both resolve, but
- * the SDK is the more reliable source than the prose.
+ * World's Quick Action deep link. `path` is URL-encoded per the docs, so the visitor
+ * lands on the card rather than the app's default screen.
  */
 const DEEPLINK = `https://world.org/mini-app?app_id=${APP_ID}&path=${encodeURIComponent('/home')}`;
 
-/** Counts are derived, never typed, so the page can never disagree with the data. */
-const TOTAL_TX = demoBeats.length + swapProofs.length;
-const REFUSAL_TX =
-  demoBeats.filter((b) => !b.ok).length + swapProofs.filter((p) => p.refused).length;
+/** Never retype a hash — always derive the display form from the imported literal. */
+function shortHash(hash: string): string {
+  return `${hash.slice(0, 10)}…${hash.slice(-6)}`;
+}
 
-/**
- * The one number on this page that cannot be derived from the imported data: the size
- * of the Solidity suite. Source is `forge test` in `contracts/` — 48 test functions
- * across HumanMandate, MandateSwapper, StepUp, DcaLeash and the AgentBook fork test.
- */
-const TESTS_PASSING = 48;
+/** Two-digit row number, so the beats stay aligned. */
+function rowNumber(index: number): string {
+  return String(index + 1).padStart(2, '0');
+}
 
-/**
- * The two beats that carry the whole argument, lifted into the hero by index so the
- * hashes stay the imported literals. Rows 02 and 03 of the evidence list below.
- */
-const HERO_PROOFS: readonly DemoBeat[] = [demoBeats[1], demoBeats[2]];
-
-/** Source and contact. Quiet footer text, deliberately not a call to action. */
-const COLOPHON_LINKS: readonly { readonly label: string; readonly href: string }[] = [
-  { label: 'Source', href: 'https://github.com/LingSiewWin/HumanMandate' },
-  { label: 'X', href: 'https://x.com/siewwwin' },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/ling-siew-win/' },
-  { label: 'Telegram', href: 'https://t.me/siewwwin' },
-];
-
-type Surface = {
-  readonly art: string;
-  readonly tag: string;
-  readonly name: string;
-  readonly note: string;
-  /** Set in the hash face beneath the note, the same way selectors are. */
-  readonly call?: string;
-};
-
-/**
- * The three surfaces the card actually stands on. Each claim below is either performed
- * by a transaction in the lists above or restated verbatim from the honest-limits
- * section beneath — no capability is described here that the page cannot show.
- */
-const SURFACES: readonly Surface[] = [
-  {
-    art: '/brand/illus/world-id.webp',
-    tag: 'World ID',
-    name: 'Selfie Check',
-    note: 'Liveness is asked only where authority widens — raising a cap, or moving the payee. Spending under the limit never triggers it. It is reauthentication before a rule changes, not a proof that anyone is human.',
-  },
-  {
-    art: '/brand/illus/world-chain.webp',
-    tag: 'World Chain',
-    name: 'AgentBook',
-    note: 'Before it moves anything, the payment contract asks World’s registry which person is behind the address, so the rule binds the human rather than the key. Every project listed on agentbook.world gates an HTTP endpoint; none of them guards money in Solidity.',
-    call: 'lookupHuman(address)',
-  },
-  {
-    art: '/brand/illus/world-coin.webp',
-    tag: 'Uniswap',
-    name: 'Trading API',
-    note: 'The venue the allowance is actually spent at. The floor on what the payee receives is enforced on-chain, so a cap that only counts what leaves cannot be drained through a bad route.',
-  },
-];
-
-type HandoffBeat = { readonly title: string; readonly note: string };
-
-/**
- * The opening section is the product in three sentences. Nothing here is a promise:
- * each clause is performed by a transaction further down — the cap and the payment
- * ceiling by row 01, the unattended spend by row 02, the stop and the respawn refusal
- * by rows 10 and 11.
- */
-const HANDOFF_BEATS: readonly HandoffBeat[] = [
+const HANDOFF_BEATS = [
   {
     title: 'You set the limit',
     note: 'A rolling 24-hour cap, a ceiling on any single payment, and one payee the agent cannot swap out.',
@@ -121,28 +51,57 @@ const HANDOFF_BEATS: readonly HandoffBeat[] = [
     title: 'You stop the person',
     note: 'One tap ends it, and a brand-new address from that same human is refused on the next block.',
   },
-];
+] as const;
 
-/** Never retype a hash — always derive the display form from the imported literal. */
-function shortHash(hash: string): string {
-  return `${hash.slice(0, 10)}…${hash.slice(-6)}`;
-}
+/** The two that carry the whole argument: one accepted, one refused, same call. */
+const HERO_PROOFS: readonly DemoBeat[] = [demoBeats[1], demoBeats[2]];
 
-/** Two-digit row number, so the evidence lists stay aligned as they pass ten. */
-function rowNumber(index: number): string {
-  return String(index + 1).padStart(2, '0');
-}
+/** Derived, so the copy can never drift from the evidence it describes. */
+const TOTAL_TX = demoBeats.length + swapProofs.length;
 
-/**
- * Base units to a human amount. The swap figures are USDC.e, and six decimals is the
- * difference between "939042" and "0.939042" — the decimals come from the token
- * constant rather than a second copy of the numbers.
- */
-function toUnits(baseUnits: string, decimals: number): string {
-  const padded = baseUnits.padStart(decimals + 1, '0');
-  const cut = padded.length - decimals;
-  return `${padded.slice(0, cut)}.${padded.slice(cut)}`;
-}
+const SURFACES: readonly {
+  tag: string;
+  name: string;
+  art: string;
+  note: string;
+  call?: string;
+}[] = [
+  {
+    tag: 'World ID',
+    name: 'Selfie Check',
+    art: '/brand/illus/world-id.webp',
+    note:
+      'Liveness is asked only where authority widens — raising a cap, or moving the payee. ' +
+      'Spending under the limit never triggers it. It is reauthentication before a rule ' +
+      'changes, not a proof that anyone is human.',
+  },
+  {
+    tag: 'World Chain',
+    name: 'AgentBook',
+    art: '/brand/illus/world-chain.webp',
+    note:
+      'Before it moves anything, the payment contract asks World’s registry which person is ' +
+      'behind the address, so the rule binds the human rather than the key. Every project ' +
+      'listed on agentbook.world gates an HTTP endpoint; none of them guards money in Solidity.',
+    call: 'lookupHuman(address)',
+  },
+  {
+    tag: 'Uniswap',
+    name: 'Trading API',
+    art: '/brand/illus/world-coin.webp',
+    note:
+      'The venue the allowance is actually spent at. The floor on what the payee receives is ' +
+      'enforced on-chain, so a cap that only counts what leaves cannot be drained through a ' +
+      'bad route.',
+  },
+] as const;
+
+const COLOPHON_LINKS = [
+  { href: 'https://github.com/LingSiewWin/HumanMandate', label: 'Repository' },
+  { href: 'https://x.com/siewwwin', label: 'X' },
+  { href: 'https://www.linkedin.com/in/ling-siew-win/', label: 'LinkedIn' },
+  { href: 'https://t.me/siewwwin', label: 'Telegram' },
+] as const;
 
 /** Read-only board for laptops and the judging screen. No auth, no wallet, no writes. */
 export default function DeskPage() {
@@ -173,7 +132,6 @@ export default function DeskPage() {
             </span>
             <span className={styles.navChips}>
               <span className={styles.chip}>World Chain mainnet</span>
-              <span className={styles.chip}>{TOTAL_TX} transactions</span>
             </span>
           </nav>
 
@@ -261,74 +219,7 @@ export default function DeskPage() {
       </div>
 
       <div className={styles.body}>
-        <section className={styles.section}>
-          <p className={styles.eyebrow}>Who it&rsquo;s for</p>
-          <h2 className={styles.sectionTitle}>Three people, three refusals</h2>
-          <p className={styles.sectionNote}>
-            Design targets, not customers — we have none yet. Each one ends with the mainnet
-            transaction where the chain actually performs the refusal.
-          </p>
-          <div className={styles.grid}>
-            {scenarios.map((s) => (
-              <article key={s.id} className={styles.card}>
-                <p className={styles.cardTab}>{s.tab}</p>
-                <h3 className={styles.cardName}>{s.person}</h3>
-                <p className={styles.cardWho}>{s.who}</p>
-                <p className={styles.cardPain}>{s.pain}</p>
-                <p className={styles.cardSetup}>{s.setup}</p>
-                <p className={styles.cardFamiliar}>{s.familiar}</p>
-                <a
-                  className={styles.cardProof}
-                  href={explorerTx(s.proofTx)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span className={styles.cardProofLabel}>{s.proofLabel}</span>
-                  <span className={styles.cardProofHash}>{shortHash(s.proofTx)}</span>
-                </a>
-              </article>
-            ))}
-          </div>
-        </section>
 
-        <section className={styles.section} id="evidence">
-          <p className={styles.eyebrow}>
-            {REFUSAL_TX} of these {TOTAL_TX} transactions are refusals — that is the product
-          </p>
-          <h2 className={styles.sectionTitle}>Every rule, on World Chain mainnet</h2>
-          <p className={styles.sectionNote}>
-            One person, one contract, one run. The two beats that cannot be reproduced by gating
-            an HTTP endpoint or reissuing a card are rows 02 and 03: an address the card never
-            named spends anyway, and a wallet with no human behind it is refused.
-          </p>
-          <ol className={styles.beats}>
-            {demoBeats.map((b: DemoBeat, i: number) => (
-              <li key={b.tx} className={styles.beat}>
-                <span className={styles.beatIndex}>{rowNumber(i)}</span>
-                <span className={styles.beatMain}>
-                  <span className={styles.beatLabel}>{b.label}</span>
-                  {b.selector ? <span className={styles.beatSelector}>{b.selector}</span> : null}
-                </span>
-                <span className={styles.beatSide}>
-                  <span className={b.ok ? styles.statePass : styles.stateFail}>
-                    <span aria-hidden="true" className={styles.stateGlyph}>
-                      {b.ok ? '✓' : '✕'}
-                    </span>
-                    {b.ok ? 'Confirmed' : 'Reverted'}
-                  </span>
-                  <a
-                    className={styles.beatLink}
-                    href={explorerTx(b.tx)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {shortHash(b.tx)}
-                  </a>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
 
         <section className={styles.section}>
           <p className={styles.eyebrow}>Uniswap — {swapProofs.length} transactions</p>
@@ -343,56 +234,22 @@ export default function DeskPage() {
             calldata. The transaction that matters is the fourth one: the contract refusing to
             settle.
           </p>
-          <ol className={styles.beats}>
-            {swapProofs.map((b, i) => (
-              <li key={b.tx} className={styles.beat}>
-                <span className={styles.beatIndex}>{rowNumber(i)}</span>
-                <span className={styles.beatMain}>
-                  <span className={styles.beatLabel}>{b.label}</span>
-                  {b.selector ? <span className={styles.beatSelector}>{b.selector}</span> : null}
-                </span>
-                <span className={styles.beatSide}>
-                  <span className={b.refused ? styles.stateFail : styles.statePass}>
-                    <span aria-hidden="true" className={styles.stateGlyph}>
-                      {b.refused ? '✕' : '✓'}
-                    </span>
-                    {b.refused ? 'Refused' : 'Settled'}
-                  </span>
-                  <a
-                    className={styles.beatLink}
-                    href={explorerTx(b.tx)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {shortHash(b.tx)}
-                  </a>
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className={styles.settlement}>
-            <p className={styles.settlementLine}>
-              The route could deliver{' '}
-              <span className={styles.settleFigure}>
-                {toUnits(QUOTED_OUT, TOKEN_OUT.decimals)} {TOKEN_OUT.symbol}
-              </span>
-              ; the contract demanded{' '}
-              <span className={`${styles.settleFigure} ${styles.settleRefused}`}>
-                {toUnits(REFUSED_FLOOR, TOKEN_OUT.decimals)}
-              </span>
-              , refused, then settled at{' '}
-              <span className={`${styles.settleFigure} ${styles.settleReceived}`}>
-                {toUnits(RECEIVED_OUT, TOKEN_OUT.decimals)} received
-              </span>
-              .
-            </p>
-            <p className={styles.settlementRaw}>
-              base units — quoted {QUOTED_OUT} · floor {REFUSED_FLOOR} · received {RECEIVED_OUT}
-            </p>
-          </div>
         </section>
 
-        <section className={styles.section}>
+      </div>
+
+      {/*
+        Section 3 — the three surfaces, one screen each.
+
+        The stack is a plain CSS sticky sequence: every panel is `position: sticky;
+        top: 0` inside one container, so the first pins while the second and third
+        slide over it. No script, no scroll listener. Each panel is opaque, or the
+        one underneath would print through. The container sits outside `.body` so a
+        panel can run the full width of the viewport without a 100vw negative-margin
+        trick, which is what usually introduces a horizontal scrollbar.
+      */}
+      <section className={styles.surfaces}>
+        <div className={styles.surfacesIntro}>
           <p className={styles.eyebrow}>What it is built on</p>
           <h2 className={styles.sectionTitle}>Three surfaces, three jobs</h2>
           <p className={styles.sectionNote}>
@@ -400,27 +257,32 @@ export default function DeskPage() {
             other two cannot, and the transactions above are what happens when they are wired
             together.
           </p>
-          <div className={styles.grid}>
-            {SURFACES.map((s) => (
-              <article key={s.name} className={`${styles.card} ${styles.surface}`}>
+        </div>
+
+        <div className={styles.surfaceStack}>
+          {SURFACES.map((s) => (
+            <article key={s.name} className={styles.surfacePanel}>
+              <div className={styles.surfacePanelInner}>
+                <p className={styles.surfaceTag}>{s.tag}</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={s.art}
                   alt=""
-                  width={88}
-                  height={88}
+                  width={176}
+                  height={176}
                   loading="lazy"
                   className={styles.surfaceMark}
                 />
-                <p className={styles.cardTab}>{s.tag}</p>
-                <h3 className={styles.cardName}>{s.name}</h3>
+                <h3 className={styles.surfaceName}>{s.name}</h3>
                 <p className={styles.surfaceNote}>{s.note}</p>
                 {s.call ? <p className={styles.surfaceCall}>{s.call}</p> : null}
-              </article>
-            ))}
-          </div>
-        </section>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
+      <div className={styles.body}>
         <section className={styles.section}>
           <p className={styles.eyebrow}>Honest limits</p>
           <h2 className={styles.sectionTitle}>Three things we do not claim</h2>
@@ -442,24 +304,6 @@ export default function DeskPage() {
 
         <footer className={styles.footer}>
           {/* Four numbers, three of them derived from the same data the lists render. */}
-          <ul className={styles.stats}>
-            <li className={styles.stat}>
-              <span className={styles.statValue}>{TOTAL_TX}</span>
-              <span className={styles.statLabel}>mainnet transactions</span>
-            </li>
-            <li className={styles.stat}>
-              <span className={styles.statValue}>{REFUSAL_TX}</span>
-              <span className={styles.statLabel}>of them refusals</span>
-            </li>
-            <li className={styles.stat}>
-              <span className={styles.statValue}>{TESTS_PASSING}</span>
-              <span className={styles.statLabel}>tests passing</span>
-            </li>
-            <li className={styles.stat}>
-              <span className={styles.statValue}>{MANDATE_CHAIN_ID}</span>
-              <span className={styles.statLabel}>World Chain chain id</span>
-            </li>
-          </ul>
 
           <p className={styles.eyebrow}>Contracts</p>
           <div className={styles.contracts}>

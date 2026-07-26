@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashSignal } from '@worldcoin/idkit-core/hashing';
 import type { PrivateKeyAccount } from 'viem/accounts';
-import { isAddress } from 'viem';
+import { createPublicClient, http, isAddress, recoverTypedDataAddress } from 'viem';
+import { worldchain } from 'viem/chains';
+import { WORLDCHAIN_RPC, mandateAbi } from '@/lib/mandate';
 import { livenessAttestorAccount } from '@/lib/liveness-attestor';
 
 type PortalVerify = {
@@ -32,8 +34,11 @@ const EXPECTED_STEPUP_ACTION =
  * preset — otherwise a Selfie bound to wallet A can authorize a StepUp for wallet B.
  */
 export async function POST(req: NextRequest) {
-  const { account, newCap, newRecipient, idkitResponse } = (await req.json().catch(() => ({}))) as {
+  const { account, mandateId, newCap, newRecipient, idkitResponse } = (await req
+    .json()
+    .catch(() => ({}))) as {
     account?: `0x${string}`;
+    mandateId?: `0x${string}`;
     newCap?: string;
     newRecipient?: `0x${string}`;
     idkitResponse?: IdkitProofBody;
@@ -47,6 +52,11 @@ export async function POST(req: NextRequest) {
   }
   if (!newCap || !/^\d+$/.test(newCap)) {
     return NextResponse.json({ error: 'newCap must be an integer string' }, { status: 400 });
+  }
+  // The contract's digest binds the mandate, so an attestation for one card can never
+  // widen another. Omitting it silently produced a signature that could not verify.
+  if (!mandateId || !/^0x[0-9a-fA-F]{64}$/.test(mandateId)) {
+    return NextResponse.json({ error: 'mandateId must be 32-byte hex' }, { status: 400 });
   }
   if (!idkitResponse) {
     return NextResponse.json({ error: 'liveness proof required' }, { status: 400 });
@@ -117,29 +127,60 @@ export async function POST(req: NextRequest) {
 
   // Short window: the attestation is about a human being present *now*.
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-  const signature = await signer.signTypedData({
+  const typedData = {
     domain: {
       name: 'HumanMandate',
-      version: '1',
+      // Must match EIP712("HumanMandate", "2") in the deployed contract. A mismatched
+      // domain recovers to a random signer and every raiseLimits reverts LivenessRequired.
+      version: '2',
       chainId: Number(process.env.MANDATE_CHAIN_ID ?? 480),
       verifyingContract: mandateAddress as `0x${string}`,
     },
     types: {
       StepUp: [
         { name: 'account', type: 'address' },
+        { name: 'mandateId', type: 'bytes32' },
         { name: 'newCap', type: 'uint128' },
         { name: 'newRecipient', type: 'address' },
         { name: 'deadline', type: 'uint256' },
       ],
     },
-    primaryType: 'StepUp',
+    primaryType: 'StepUp' as const,
     message: {
       account,
+      mandateId,
       newCap: BigInt(newCap),
       newRecipient,
       deadline,
     },
-  });
+  };
+  const signature = await signer.signTypedData(typedData);
+
+  // Prove the signature verifies against the contract before handing it to the user.
+  // The struct silently drifted from the deployed one once already; a mismatch here is
+  // cheaper to catch now than as a revert after somebody has scanned their face.
+  try {
+    const client = createPublicClient({ chain: worldchain, transport: http(WORLDCHAIN_RPC) });
+    const onChainDigest = await client.readContract({
+      address: mandateAddress as `0x${string}`,
+      abi: mandateAbi,
+      functionName: 'stepUpDigest',
+      args: [account, mandateId, BigInt(newCap), newRecipient, deadline],
+    });
+    const recovered = await recoverTypedDataAddress({ ...typedData, signature });
+    if (recovered.toLowerCase() !== signer.address.toLowerCase()) {
+      throw new Error('attestation does not recover to the attestor');
+    }
+    if (!onChainDigest) throw new Error('contract returned no digest');
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error: 'attestation_would_not_verify',
+        detail: e instanceof Error ? e.message : String(e),
+      },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ signature, deadline: deadline.toString(), attestor: signer.address });
 }

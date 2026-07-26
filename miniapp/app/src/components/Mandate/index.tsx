@@ -23,6 +23,7 @@ import { RoutePanel } from '@/components/Route';
 import { ScenarioStrip } from '@/components/Scenarios';
 import { defaultScenario, getScenario, type ScenarioId } from '@/lib/scenarios';
 import { useWalletAddress } from '@/hooks/useWalletAddress';
+import { WINDOW_SECONDS } from '@/components/Spending/format';
 import { IDKit, selfieCheckLegacy, type RpContext } from '@worldcoin/idkit';
 import {
   Button,
@@ -337,6 +338,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: wallet,
+          mandateId: DEFAULT_MANDATE_ID,
           newCap: capRaw.toString(),
           newRecipient,
           idkitResponse: completion.result,
@@ -376,7 +378,16 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const username = session.data?.user?.username;
   const avatar = session.data?.user?.profilePictureUrl;
   const hasMandate = Boolean(mandate && !mandate.empty);
-  const usage = hasMandate ? capUsagePercent(mandate!.spentInWindow, mandate!.windowCap) : 0;
+  /**
+   * The contract clears spentInWindow lazily, on the next pull — so once the window has
+   * elapsed the stored figure no longer applies and the allowance is whole again. Reading
+   * it without checking windowStart made this panel claim the cap was used up while the
+   * Spending tab, which does check, said the opposite about the same card.
+   */
+  const windowStart = Number(mandate?.windowStart ?? 0);
+  const windowElapsed = windowStart === 0 || Date.now() / 1000 - windowStart >= WINDOW_SECONDS;
+  const spentNow = hasMandate && !windowElapsed ? mandate!.spentInWindow : '0';
+  const usage = hasMandate ? capUsagePercent(spentNow, mandate!.windowCap) : 0;
 
   let statusLabel = 'Not set up';
   let statusBlurb = 'No spending card for this account yet.';
@@ -459,7 +470,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
               </div>
               <div>
                 <dt className={styles.metricLabel}>Used today</dt>
-                <dd className={styles.metricValue}>{formatUnitsLoose(mandate.spentInWindow)}</dd>
+                <dd className={styles.metricValue}>{formatUnitsLoose(spentNow)}</dd>
               </div>
               <div className={styles.metricWide}>
                 <dt className={styles.metricLabel}>Pays only to</dt>
@@ -469,7 +480,7 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             <div className={styles.capBar}>
               <Progress value={usage} className="w-full" />
               <p className={styles.capCaption}>
-                {formatUnitsLoose(mandate.spentInWindow)} of {formatUnitsLoose(mandate.windowCap)} used
+                {formatUnitsLoose(spentNow)} of {formatUnitsLoose(mandate.windowCap)} used
                 today
               </p>
             </div>

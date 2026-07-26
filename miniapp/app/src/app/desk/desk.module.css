@@ -41,7 +41,12 @@
   --font-hash: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
 
   min-height: 100vh;
-  padding: 12px 12px 0;
+  /*
+   * No gutter. The dark sections are the page at the top, not cards floating on
+   * paper: any padding here would paint a paper frame down the left and right of
+   * the ink field and across the top of the viewport.
+   */
+  padding: 0;
   background-color: var(--paper);
   background-image:
     radial-gradient(1100px 720px at 88% 14%, rgba(var(--ink-rgb), 0.05), transparent 62%),
@@ -110,9 +115,8 @@
 /* ------------------------------------------------------------- 1. handoff */
 
 /*
- * The opening slab. Full viewport minus the page's own 12px gutter top and the 12px
- * that separates it from the hero, so the two dark panels read as two panels rather
- * than one long field.
+ * The opening slab — a full viewport of ink, edge to edge. It runs straight into the
+ * hero below it: one continuous dark field, no paper seam between the two.
  */
 .handoff {
   position: relative;
@@ -120,10 +124,8 @@
   overflow: hidden;
   /* Confines the art layer's blend to this section, so it can never reach the paper. */
   isolation: isolate;
-  margin-bottom: 12px;
-  min-height: calc(100vh - 24px);
-  min-height: calc(100svh - 24px);
-  border-radius: var(--radius-lg);
+  min-height: 100vh;
+  min-height: 100svh;
   background-color: var(--ink);
   color: var(--paper);
 }
@@ -309,7 +311,6 @@
 .hero {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-lg);
   background-color: var(--ink);
   background-image:
     radial-gradient(1200px 620px at 82% -12%, rgba(var(--paper-rgb), 0.14), transparent 60%),
@@ -737,52 +738,141 @@
   overflow-wrap: anywhere;
 }
 
-/* ----------------------------------------------------------- surface cards */
+/* --------------------------------------------------- surface panels (3 of 3) */
 
 /*
- * Same card shell as the personas — rim, radius, shadow all inherited — with room at
- * the top for the mark. `isolation` confines the mark's blend to the card.
+ * Three surfaces, one screen each.
+ *
+ * Mechanism: sticky stack, not scroll-snap. All three panels are siblings inside
+ * `.surfaceStack`; each is `position: sticky; top: 0; height: 100vh`. Panel 1 pins at
+ * the top of the viewport and stays pinned for the length of the container, so panels
+ * 2 and 3 — laid out one and two viewports below — slide up over it in turn. The
+ * container needs no explicit height: three 100vh children already give it 300vh,
+ * which is exactly one viewport of scroll per panel.
+ *
+ * Scroll-snap was the alternative and was rejected: snapping the document would drag
+ * the handoff, the hero and the footer into the same rhythm, and snapping a nested
+ * `overflow-y` container puts a second scroller between the reader and the footer —
+ * the one failure mode that must not happen on a phone.
+ *
+ * The base rules below are the stacked layout — plain sections in document flow. The
+ * pinning is added, never removed, by a single media query further down, so a phone,
+ * a short window and a reduced-motion reader all land on the same safe layout.
  */
-.surface {
+
+.surfaces {
+  position: relative;
+}
+
+/* The section's own heading, in the body's measure and gutter. */
+.surfacesIntro {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.surfaceStack {
+  position: relative;
+}
+
+/*
+ * Opaque, or the outgoing panel prints through the incoming one. The hairline is an
+ * inset shadow rather than a border so the panel's box stays exactly 100vh and the
+ * three offsets stay exactly one viewport apart.
+ */
+.surfacePanel {
+  position: relative;
+  display: flex;
+  align-items: center;
   isolation: isolate;
+  padding: 48px 0;
+  background-color: var(--paper);
+  box-shadow: inset 0 1px 0 var(--rule);
+}
+
+.surfacePanelInner {
+  width: 100%;
+  min-width: 0;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.surfaceTag {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /*
  * World's line art is a near-black stroke on an rgb(249,249,249) ground — within one
- * unit of `--paper`, but the card beneath is translucent, so `multiply` still darkened
- * that ground into a visible pale square. `darken` takes the per-channel minimum
- * instead: the ground loses to the card everywhere and disappears, while the strokes
- * always win. Opacity then dials the stroke back to a mark rather than an image.
+ * unit of `--paper`. `darken` takes the per-channel minimum, so the ground loses to
+ * the paper beneath it and disappears while the strokes always win. Opacity then dials
+ * the stroke back to a mark rather than an image.
  *
- * Width and height are set on the element as well as in CSS, so the card's height is
+ * Width and height are set on the element as well as in CSS, so the panel's height is
  * settled before the file arrives.
  */
 .surfaceMark {
   display: block;
-  width: 88px;
-  height: 88px;
-  margin: 0 0 16px -4px;
+  width: clamp(112px, 13vh, 176px);
+  height: clamp(112px, 13vh, 176px);
+  margin: 24px 0 0 -6px;
   object-fit: contain;
   mix-blend-mode: darken;
   opacity: 0.85;
 }
 
+.surfaceName {
+  margin: 24px 0 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.032em;
+  color: var(--ink);
+}
+
 .surfaceNote {
-  margin: 12px 0 0;
-  font-size: 0.875rem;
+  margin: 24px 0 0;
+  max-width: 56ch;
+  font-size: clamp(1rem, 1.4vw, 1.1875rem);
   line-height: 1.62;
   color: var(--prose);
 }
 
 /* Same treatment as a revert selector: the exact call, in the hash face. */
 .surfaceCall {
-  margin: 12px 0 0;
+  margin: 24px 0 0;
   font-family: var(--font-hash);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.45;
   color: var(--ink);
   opacity: 0.62;
   overflow-wrap: anywhere;
+}
+
+/*
+ * The pin itself. Gated on three conditions, all of which have to hold before a panel
+ * is allowed to fill the viewport:
+ *   - min-width 721px  — a phone stacks; see the note in the responsive block.
+ *   - min-height 600px — below that the panel's own content is taller than the screen,
+ *     and a pinned panel taller than the viewport hides its own last line.
+ *   - no-preference    — a reader who asked for less motion gets three plain sections.
+ */
+@media (min-width: 721px) and (min-height: 600px) and (prefers-reduced-motion: no-preference) {
+  .surfacesIntro {
+    padding-bottom: 64px;
+  }
+
+  .surfacePanel {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+  }
 }
 
 /* --------------------------------------------------------- evidence tables */
@@ -1125,10 +1215,6 @@
 /* -------------------------------------------------------------- responsive */
 
 @media (max-width: 720px) {
-  .page {
-    padding: 8px 8px 0;
-  }
-
   /*
    * A 3:2 drawing cropped to `cover` inside a portrait phone is a 3.3x zoom on the
    * middle third — the two hands stop being hands. Contained, the whole composition
@@ -1176,6 +1262,25 @@
   .body {
     padding: 48px 16px 64px;
     gap: 64px;
+  }
+
+  /*
+   * The surfaces stay in document flow on a phone. A pinned 100vh panel here would
+   * have to hold a 112px mark, a title and a six-line paragraph inside 844px minus
+   * browser chrome, and the moment that overflows the reader is held against copy
+   * they cannot scroll to. Three plain sections is the worse layout and the right
+   * one — the media query that pins them starts at 721px.
+   */
+  .surfacesIntro {
+    padding: 0 16px 32px;
+  }
+
+  .surfacePanel {
+    padding: 40px 0;
+  }
+
+  .surfacePanelInner {
+    padding: 0 16px;
   }
 
   .beats {

@@ -18,7 +18,7 @@ const Header = (props: { children: ReactNode; className?: string }) => {
   return (
     <header
       className={twMerge(
-        'bg-white flex flex-col justify-center px-6 pt-6 pb-3 z-10',
+        'flex flex-col justify-center px-6 pt-6 pb-3 z-10 bg-transparent',
         clsx(props.className),
       )}
     >
@@ -31,7 +31,7 @@ const Main = (props: { children: ReactNode; className?: string }) => {
   return (
     <main
       className={twMerge(
-        clsx('grow overflow-y-auto p-6 pt-3', props.className),
+        clsx('grow overflow-y-auto p-6 pt-3 text-[color:var(--hm-ink)] bg-[color:var(--hm-bg)]', props.className),
       )}
     >
       {props.children}

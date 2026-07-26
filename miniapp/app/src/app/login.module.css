@@ -1,0 +1,65 @@
+.page {
+  background: var(--hm-bg);
+}
+
+.main {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--hm-gap-section);
+  padding: var(--hm-pad) !important;
+  padding-bottom: calc(var(--hm-pad) + 24px) !important;
+  min-height: 100%;
+  background: var(--hm-bg);
+}
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 48px;
+  animation: hm-rise 0.5s ease-out both;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  margin: 0 0 16px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--hm-ink);
+  max-width: 16ch;
+}
+
+.sub {
+  margin: 12px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--hm-ink-muted);
+  max-width: 28ch;
+}
+
+.cta {
+  width: 100%;
+  animation: hm-rise 0.5s ease-out 0.1s both;
+}
+
+.cta :global(button) {
+  width: 100%;
+}

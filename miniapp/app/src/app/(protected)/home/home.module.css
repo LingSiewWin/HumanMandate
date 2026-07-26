@@ -1,0 +1,31 @@
+.header {
+  background: transparent !important;
+  padding: 12px 24px 0 !important;
+  min-height: 28px;
+}
+
+.headerSafe {
+  height: 12px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 20px;
+  padding-bottom: 96px !important;
+  background: var(--hm-bg);
+}
+
+.legacy {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--hm-ink-muted);
+  margin: 0;
+}
+
+.legacy a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

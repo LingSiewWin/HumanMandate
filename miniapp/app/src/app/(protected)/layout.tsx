@@ -9,16 +9,14 @@ export default async function TabsLayout({
 }) {
   const session = await auth();
 
-  // If the user is not authenticated, redirect to the login page
   if (!session) {
     console.log('Not authenticated');
-    // redirect('/');
   }
 
   return (
-    <Page>
+    <Page className="hm-app">
       {children}
-      <Page.Footer className="px-0 fixed bottom-0 w-full bg-white">
+      <Page.Footer className="px-0 fixed bottom-0 w-full border-t border-[color:var(--hm-line)] bg-[color:var(--hm-bg)]/95 backdrop-blur-sm">
         <Navigation />
       </Page.Footer>
     </Page>

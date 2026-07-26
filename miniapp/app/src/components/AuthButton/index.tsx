@@ -5,17 +5,12 @@ import { useMiniKit } from '@worldcoin/minikit-js/minikit-provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * This component is an example of how to authenticate a user
- * We will use Next Auth for this example, but you can use any auth provider
- * Read More: https://docs.world.org/mini-apps/commands/wallet-auth
+ * World App sign-in entry. MiniKit walletAuth under the hood — UI copy stays non-crypto.
  */
 export const AuthButton = () => {
-  console.log('AuthButton render');
   const [isPending, setIsPending] = useState(false);
   const { isInstalled } = useMiniKit();
   const hasAttemptedAuth = useRef(false);
-
-  console.log('AuthButton state:', { isPending, isInstalled });
 
   const onClick = useCallback(async () => {
     if (!isInstalled || isPending) {
@@ -25,7 +20,7 @@ export const AuthButton = () => {
     try {
       await walletAuth();
     } catch (error) {
-      console.error('Wallet authentication button error', error);
+      console.error('Authentication button error', error);
     } finally {
       setIsPending(false);
     }
@@ -33,17 +28,12 @@ export const AuthButton = () => {
 
   // Auto-authenticate on load when MiniKit is ready
   useEffect(() => {
-    console.log('AuthButton effect:', {
-      isInstalled,
-      hasAttemptedAuth: hasAttemptedAuth.current,
-    });
     if (isInstalled === true && !hasAttemptedAuth.current) {
-      console.log('Firing walletAuth automatically');
       hasAttemptedAuth.current = true;
       setIsPending(true);
       walletAuth()
         .catch((error) => {
-          console.error('Auto wallet authentication error', error);
+          console.error('Auto authentication error', error);
         })
         .finally(() => {
           setIsPending(false);
@@ -54,9 +44,9 @@ export const AuthButton = () => {
   return (
     <LiveFeedback
       label={{
-        failed: 'Failed to login',
-        pending: 'Logging in',
-        success: 'Logged in',
+        failed: 'Failed to continue',
+        pending: 'Continuing',
+        success: 'Signed in',
       }}
       state={isPending ? 'pending' : undefined}
     >
@@ -66,7 +56,7 @@ export const AuthButton = () => {
         size="lg"
         variant="primary"
       >
-        Login with Wallet
+        Continue
       </Button>
     </LiveFeedback>
   );

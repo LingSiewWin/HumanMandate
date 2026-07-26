@@ -1,26 +1,127 @@
 @import 'tailwindcss';
 
+/*
+ * Official World assets (local):
+ *   /brand/fonts/WorldProMVP.ttf
+ *   /brand/logo/world-logo-*.{svg,png}
+ *
+ * Color tokens from @worldcoin/mini-apps-ui-kit-react/styles.css
+ * (--gray-*, --success-*, --error-*, --worldcoin-primary, --world-blue-*).
+ * Spacing from docs/worldcoin/mini-app/design-guideline.md: 24 / 16 / 32.
+ */
+
+@font-face {
+  font-family: 'World Pro MVP';
+  src: url('/brand/fonts/WorldProMVP.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-world: 'World Pro MVP', 'TWK Lausanne', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: var(--font-world);
+
+  --hm-bg: rgb(var(--gray-0, 255 255 255));
+  --hm-bg-subtle: rgb(var(--gray-50, 249 250 251));
+  --hm-surface: rgb(var(--gray-0, 255 255 255));
+  --hm-ink: rgb(var(--gray-900, 24 24 24));
+  --hm-ink-muted: rgb(var(--gray-500, 113 118 128));
+  --hm-ink-soft: rgb(var(--gray-700, 60 66 75));
+  --hm-line: rgb(var(--gray-200, 235 236 239));
+  --hm-line-strong: rgb(var(--gray-300, 214 217 221));
+  --hm-fill: rgb(var(--gray-100, 243 244 245));
+  --hm-fill-strong: rgb(var(--gray-200, 235 236 239));
+
+  --hm-success: rgb(var(--success-600, 0 194 48));
+  --hm-success-ink: rgb(var(--success-700, 0 155 38));
+  --hm-success-bg: rgb(var(--success-100, 230 249 236));
+  --hm-danger: rgb(var(--error-600, 242 40 13));
+  --hm-danger-ink: rgb(var(--error-700, 194 32 10));
+  --hm-danger-bg: rgb(var(--error-100, 254 233 231));
+  --hm-warning: rgb(var(--warning-600, 255 174 0));
+  --hm-warning-ink: rgb(var(--warning-700, 204 139 0));
+  --hm-warning-bg: rgb(var(--warning-100, 255 246 230));
+
+  --hm-accent: rgb(var(--world-blue-primary, 63 219 237));
+  --hm-accent-soft: rgb(var(--world-blue-secondary, 236 251 253));
+
+  --hm-primary: rgb(var(--worldcoin-primary, 24 24 24));
+  --hm-primary-fg: rgb(var(--gray-0, 255 255 255));
+
+  --background: var(--hm-bg);
+  --foreground: var(--hm-ink);
+
+  --font-display: var(--font-world);
+  --font-body: var(--font-world);
+  --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --hm-pad: 24px;
+  --hm-gap-section: 32px;
+  --hm-gap-item: 16px;
+  --hm-gap-tight: 12px;
+  --hm-radius: 1rem;
+  --hm-radius-sm: 0.625rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+@keyframes hm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hm-pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--hm-success) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

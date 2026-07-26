@@ -47,3 +47,9 @@ nullifiers.json
 .cursor/
 /Logo.zip
 /WorldProMVP.ttf
+
+# Design sources. The small originals ship so the webp in public/ can be
+# regenerated; the 12 MB brand kit does not.
+!assets/README.md
+!assets/**/*.png
+assets/**/*.zip

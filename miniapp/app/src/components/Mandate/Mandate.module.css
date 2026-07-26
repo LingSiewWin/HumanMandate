@@ -545,3 +545,11 @@
 .contractLabel {
   color: var(--hm-ink-muted);
 }
+
+.stepUpHeading {
+  margin: 0 0 var(--hm-gap-tight, 12px);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--hm-ink);
+}

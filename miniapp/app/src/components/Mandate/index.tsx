@@ -596,6 +596,9 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         )}
 
         <div className={styles.stepUp}>
+          {/* The ui-kit hides its floating label once a field has a value, and both of
+              these open pre-filled, so without a heading they read as two mystery boxes. */}
+          <p className={styles.stepUpHeading}>Raise the limit</p>
           <div className={styles.fieldStack}>
             <Input
               label="New daily limit"

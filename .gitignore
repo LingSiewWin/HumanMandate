@@ -42,3 +42,8 @@ nullifiers.json
 # stray screenshots from browser automation
 *.png
 !miniapp/app/public/**/*.png
+
+# editor config and raw design sources (the shipped copies live in public/brand)
+.cursor/
+/Logo.zip
+/WorldProMVP.ttf

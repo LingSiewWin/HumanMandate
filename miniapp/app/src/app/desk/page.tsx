@@ -12,6 +12,7 @@ import {
   RECEIVED_OUT,
   REFUSED_FLOOR,
   SWAPPER_ADDRESS,
+  TOKEN_OUT,
   swapProofs,
 } from '@/lib/swapper';
 import { scenarios } from '@/lib/scenarios';
@@ -36,6 +37,17 @@ const APP_ID = process.env.NEXT_PUBLIC_APP_ID ?? 'app_0e123e45e449778a4ddb154d1f
  */
 const DEEPLINK = `https://world.org/mini-app?app_id=${APP_ID}&path=${encodeURIComponent('/home')}`;
 
+/** Counts are derived, never typed, so the page can never disagree with the data. */
+const TOTAL_TX = demoBeats.length + swapProofs.length;
+const REFUSAL_TX =
+  demoBeats.filter((b) => !b.ok).length + swapProofs.filter((p) => p.refused).length;
+
+/**
+ * The two beats that carry the whole argument, lifted into the hero by index so the
+ * hashes stay the imported literals. Rows 02 and 03 of the evidence list below.
+ */
+const HERO_PROOFS: readonly DemoBeat[] = [demoBeats[1], demoBeats[2]];
+
 /** Never retype a hash — always derive the display form from the imported literal. */
 function shortHash(hash: string): string {
   return `${hash.slice(0, 10)}…${hash.slice(-6)}`;
@@ -44,6 +56,17 @@ function shortHash(hash: string): string {
 /** Two-digit row number, so the evidence lists stay aligned as they pass ten. */
 function rowNumber(index: number): string {
   return String(index + 1).padStart(2, '0');
+}
+
+/**
+ * Base units to a human amount. The swap figures are USDC.e, and six decimals is the
+ * difference between "939042" and "0.939042" — the decimals come from the token
+ * constant rather than a second copy of the numbers.
+ */
+function toUnits(baseUnits: string, decimals: number): string {
+  const padded = baseUnits.padStart(decimals + 1, '0');
+  const cut = padded.length - decimals;
+  return `${padded.slice(0, cut)}.${padded.slice(cut)}`;
 }
 
 /** Read-only board for laptops and the judging screen. No auth, no wallet, no writes. */
@@ -66,29 +89,68 @@ export default function DeskPage() {
             </span>
             <span className={styles.navChips}>
               <span className={styles.chip}>World Chain mainnet</span>
-              <span className={styles.chip}>16 transactions</span>
+              <span className={styles.chip}>{TOTAL_TX} transactions</span>
             </span>
           </nav>
 
-          <h1 className={styles.headline}>An allowance bound to a person, not an address.</h1>
-          <p className={styles.deck}>
-            Daily limit, one locked payee, one tap to stop — bound to a person on World, not to a
-            wallet address they can throw away and replace.
-          </p>
+          <div className={styles.heroGrid}>
+            <div className={styles.heroClaim}>
+              <h1 className={styles.headline}>An allowance bound to a person, not an address.</h1>
+              <p className={styles.deck}>
+                Daily limit, one locked payee, one tap to stop — bound to a person on World, not
+                to a wallet address they can throw away and replace.
+              </p>
 
-          <div className={styles.heroActions}>
-            <a className={styles.cta} href={DEEPLINK} target="_blank" rel="noreferrer">
-              Open in World App
-            </a>
-            <a className={styles.ctaGhost} href="#evidence">
-              Skip to the evidence
-            </a>
+              <div className={styles.heroActions}>
+                <a className={styles.cta} href="#evidence">
+                  Skip to the evidence
+                </a>
+                <a
+                  className={styles.ctaGhost}
+                  href={DEEPLINK}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open in World App
+                </a>
+              </div>
+
+              <p className={styles.attribution}>
+                Every link on this page resolves to a transaction already mined on World Chain
+                mainnet. Nothing here is a screenshot, a mock or a testnet run.
+              </p>
+            </div>
+
+            <aside className={styles.heroProof} aria-label="The two transactions that decide it">
+              <p className={styles.heroProofTitle}>The two that decide it</p>
+              <ul className={styles.heroProofList}>
+                {HERO_PROOFS.map((b) => (
+                  <li key={b.tx} className={styles.heroProofItem}>
+                    <span className={styles.heroProofLabel}>{b.label}</span>
+                    <span className={styles.heroProofMeta}>
+                      <span className={b.ok ? styles.heroStatePass : styles.heroStateFail}>
+                        <span aria-hidden="true" className={styles.stateGlyph}>
+                          {b.ok ? '✓' : '✕'}
+                        </span>
+                        {b.ok ? 'Confirmed' : 'Reverted'}
+                      </span>
+                      <a
+                        className={styles.heroProofLink}
+                        href={explorerTx(b.tx)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {shortHash(b.tx)}
+                      </a>
+                    </span>
+                    {b.selector ? (
+                      <span className={styles.heroProofSelector}>{b.selector}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </aside>
           </div>
-
-          <p className={styles.attribution}>
-            Every link on this page resolves to a transaction already mined on World Chain
-            mainnet. Nothing here is a screenshot, a mock or a testnet run.
-          </p>
         </div>
       </div>
 
@@ -124,12 +186,14 @@ export default function DeskPage() {
         </section>
 
         <section className={styles.section} id="evidence">
-          <p className={styles.eyebrow}>The run — 11 transactions</p>
+          <p className={styles.eyebrow}>
+            {REFUSAL_TX} of these {TOTAL_TX} transactions are refusals — that is the product
+          </p>
           <h2 className={styles.sectionTitle}>Every rule, on World Chain mainnet</h2>
           <p className={styles.sectionNote}>
-            One person, one contract, one run. The beats that cannot be reproduced by gating an
-            HTTP endpoint or reissuing a card are the pair in the middle: an address the card
-            never named spends, and an address with no human behind it is refused.
+            One person, one contract, one run. The two beats that cannot be reproduced by gating
+            an HTTP endpoint or reissuing a card are rows 02 and 03: an address the card never
+            named spends anyway, and a wallet with no human behind it is refused.
           </p>
           <ol className={styles.beats}>
             {demoBeats.map((b: DemoBeat, i: number) => (
@@ -161,16 +225,12 @@ export default function DeskPage() {
         </section>
 
         <section className={styles.section}>
-          <p className={styles.eyebrow}>Uniswap — 5 transactions</p>
-          <h2 className={styles.sectionTitle}>
-            A ceiling on what goes out is not enough once there is a swap in the middle
-          </h2>
+          <p className={styles.eyebrow}>Uniswap — {swapProofs.length} transactions</p>
+          <h2 className={styles.sectionTitle}>A cap with no floor is not a cap.</h2>
           <p className={styles.sectionNote}>
-            A daily cap counts what <em>leaves</em> the payer. Put a swap between the agent and
-            the payee and the cap stops protecting anything: an agent can stay under it forever
-            and still drain value by routing through a bad pool, because the cap never looks at
-            what comes back. So the contract is given a floor, and it measures the amount the
-            payee actually receives. A cap with no floor on the output is not a cap.
+            A daily cap only counts what <em>leaves</em> the payer, so an agent can stay under it
+            forever and still drain value by routing through a bad pool. The contract is given a
+            floor instead, and it measures the amount the payee actually receives.
           </p>
           <p className={styles.sectionNote}>
             The route is a real Uniswap Trading API response — CLASSIC routing, 1054 bytes of
@@ -204,27 +264,26 @@ export default function DeskPage() {
               </li>
             ))}
           </ol>
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Route could pay</span>
-              <span className={styles.statValue}>{QUOTED_OUT}</span>
-              <span className={styles.statUnit}>base units quoted</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Floor demanded &mdash; refused</span>
-              <span className={styles.statValue}>{REFUSED_FLOOR}</span>
-              <span className={styles.statUnit}>base units required</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Paid to the payee</span>
-              <span className={styles.statValue}>{RECEIVED_OUT}</span>
-              <span className={styles.statUnit}>base units received</span>
-            </div>
+          <div className={styles.settlement}>
+            <p className={styles.settlementLine}>
+              The route could deliver{' '}
+              <span className={styles.settleFigure}>
+                {toUnits(QUOTED_OUT, TOKEN_OUT.decimals)} {TOKEN_OUT.symbol}
+              </span>
+              ; the contract demanded{' '}
+              <span className={`${styles.settleFigure} ${styles.settleRefused}`}>
+                {toUnits(REFUSED_FLOOR, TOKEN_OUT.decimals)}
+              </span>
+              , refused, then settled at{' '}
+              <span className={`${styles.settleFigure} ${styles.settleReceived}`}>
+                {toUnits(RECEIVED_OUT, TOKEN_OUT.decimals)} received
+              </span>
+              .
+            </p>
+            <p className={styles.settlementRaw}>
+              base units — quoted {QUOTED_OUT} · floor {REFUSED_FLOOR} · received {RECEIVED_OUT}
+            </p>
           </div>
-          <p className={styles.sectionNote}>
-            Every other swap demo ends in a successful swap; this one is worth more because it
-            ends in a refused one.
-          </p>
         </section>
 
         <section className={styles.section}>

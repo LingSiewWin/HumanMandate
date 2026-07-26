@@ -2,14 +2,19 @@
  * /desk — the public judging board.
  *
  * Structure and texture borrowed from a liquid-glass reference, rendered strictly in
- * World's own palette and typeface. Two glass tiers: `.chip` (light, for pills) and
- * `.card` / `.panel` / `.cta` (heavy, for primary surfaces). Edges are drawn with a
- * masked `::before` gradient rim rather than a `border`, so the rim catches light at
- * the top and bottom and fades through the middle.
+ * World's own palette and typeface. Glass is kept where there is genuinely something
+ * behind it to blur — `.chip` and `.cta`, which sit over the dark hero gradient. On
+ * paper, surfaces are flat: a blur over a flat #f9f9f8 field composites three layers
+ * for a ~2% luminance change, so the paper surfaces just use a translucent fill and
+ * the masked `::before` gradient rim, which is what actually draws the edge.
+ *
+ * Spacing is on one scale: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96. The only numbers
+ * off it are the 6px / 4px list insets, which are the concentric-radius padding for
+ * the 20px outer / 14px inner corner pair, and the 1.4px rim ring.
  *
  * One rule outranks every aesthetic decision here: the evidence must stay legible.
- * Blur is never applied behind a hash, and every glass surface has an opaque-enough
- * fallback that it reads even where `backdrop-filter` is unsupported.
+ * Blur is never applied behind a hash, and no hash is ever set in `--muted`, which
+ * measures 3.31:1 on paper and fails AA.
  */
 
 .page {
@@ -28,6 +33,9 @@
   --radius-lg: 28px;
   --radius-md: 20px;
   --radius-sm: 14px;
+
+  /* Prose that is not a hash: darkened muted, so it clears AA on paper. */
+  --prose: color-mix(in srgb, var(--muted) 55%, var(--ink));
 
   --font-brand: var(--font-world), ui-sans-serif, -apple-system, 'Helvetica Neue', sans-serif;
   --font-hash: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
@@ -53,7 +61,7 @@
 .card::before,
 .cta::before,
 .beats::before,
-.stat::before,
+.settlement::before,
 .contracts::before {
   content: '';
   position: absolute;
@@ -88,7 +96,7 @@
    so a card never loses its boundary. */
 .card::before,
 .beats::before,
-.stat::before,
+.settlement::before,
 .contracts::before {
   background: linear-gradient(
     180deg,
@@ -116,7 +124,7 @@
 .heroInner {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 28px 32px 44px;
+  padding: 32px 32px 48px;
 }
 
 .nav {
@@ -124,14 +132,14 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 72px;
+  gap: 12px;
+  margin-bottom: 64px;
 }
 
 .navBrand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -154,13 +162,14 @@
   gap: 8px;
 }
 
-/* Glass tier 1 — light, for pills. */
+/* Glass tier 1 — light, for pills. Over the dark hero gradient, so the blur earns
+   its cost here. */
 .chip {
   position: relative;
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   background: rgba(var(--paper-rgb), 0.1);
   font-size: 0.75rem;
   font-weight: 500;
@@ -177,6 +186,25 @@
   }
 }
 
+/* Claim left, proof right. The right half of the hero used to be empty gradient while
+   the two transactions that carry the argument sat ~785px below the fold. */
+.heroGrid {
+  display: grid;
+  align-items: start;
+  gap: 48px;
+}
+
+@media (min-width: 960px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 64px;
+  }
+}
+
+.heroClaim {
+  min-width: 0;
+}
+
 .headline {
   margin: 0;
   max-width: 15ch;
@@ -188,7 +216,7 @@
 }
 
 .deck {
-  margin: 22px 0 0;
+  margin: 24px 0 0;
   max-width: 54ch;
   font-size: clamp(1rem, 1.5vw, 1.1875rem);
   line-height: 1.6;
@@ -199,8 +227,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 20px;
-  margin-top: 34px;
+  gap: 12px 24px;
+  margin-top: 32px;
 }
 
 /* Glass tier 2 — heavy, and deliberately near-opaque so the CTA is the highest
@@ -210,14 +238,14 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 14px 26px;
+  padding: 16px 24px;
   background: rgba(var(--paper-rgb), 0.94);
   color: var(--ink);
   font-size: 0.9375rem;
   font-weight: 500;
   letter-spacing: -0.005em;
   text-decoration: none;
-  box-shadow: 0 12px 34px -14px rgba(var(--ink-rgb), 0.9);
+  box-shadow: 0 12px 32px -12px rgba(var(--ink-rgb), 0.9);
   transition: transform 160ms ease;
 }
 
@@ -250,11 +278,115 @@
 }
 
 .attribution {
-  margin: 40px 0 0;
+  margin: 32px 0 0;
   max-width: 58ch;
   font-size: 0.8125rem;
   line-height: 1.6;
-  color: rgba(var(--paper-rgb), 0.48);
+  color: rgba(var(--paper-rgb), 0.62);
+}
+
+/* ------------------------------------------------------------- hero proof */
+
+.heroProof {
+  min-width: 0;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  background: rgba(var(--paper-rgb), 0.06);
+  box-shadow: inset 0 0 0 1px rgba(var(--paper-rgb), 0.14);
+}
+
+.heroProofTitle {
+  margin: 0 0 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(var(--paper-rgb), 0.62);
+}
+
+.heroProofList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.heroProofItem {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(var(--paper-rgb), 0.14);
+  min-width: 0;
+}
+
+.heroProofItem:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.heroProofLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--paper);
+}
+
+.heroProofMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+/* On the dark hero the paper-tinted chips of the evidence list would sink, so the
+   brand colour becomes the fill and paper becomes the text: 4.9:1 and 5.9:1. Same
+   vocabulary — glyph, word, colour. */
+.heroStatePass,
+.heroStateFail {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+.heroStatePass {
+  background: var(--pass);
+}
+
+.heroStateFail {
+  background: var(--fail);
+}
+
+.heroProofLink {
+  font-family: var(--font-hash);
+  font-size: 0.875rem;
+  color: rgba(var(--paper-rgb), 0.94);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(var(--paper-rgb), 0.4);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.heroProofLink:hover {
+  text-decoration-color: var(--paper);
+}
+
+.heroProofSelector {
+  font-family: var(--font-hash);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(var(--paper-rgb), 0.62);
+  overflow-wrap: anywhere;
 }
 
 /* --------------------------------------------------------------------- body */
@@ -262,10 +394,10 @@
 .body {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 88px 20px 96px;
+  padding: 96px 24px;
   display: flex;
   flex-direction: column;
-  gap: 88px;
+  gap: 96px;
 }
 
 .section {
@@ -274,8 +406,8 @@
 }
 
 .eyebrow {
-  margin: 0 0 14px;
-  font-size: 0.6875rem;
+  margin: 0 0 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -297,7 +429,7 @@
   max-width: 64ch;
   font-size: 0.9375rem;
   line-height: 1.68;
-  color: var(--muted);
+  color: var(--prose);
 }
 
 .sectionNote em {
@@ -311,28 +443,22 @@
   margin-top: 32px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
+/* Flat: the blur measured a ~2% luminance change over the paper field. The rim is
+   what draws the card, and the rim stays. */
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-md);
-  padding: 26px 24px 22px;
-  background: rgba(var(--paper-rgb), 0.86);
+  padding: 24px;
+  background: rgba(var(--paper-rgb), 0.72);
   box-shadow:
     0 1px 2px rgba(var(--ink-rgb), 0.04),
-    0 18px 40px -22px rgba(var(--ink-rgb), 0.28);
+    0 16px 40px -24px rgba(var(--ink-rgb), 0.28);
   transition: transform 160ms ease;
-}
-
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .card {
-    background: rgba(var(--paper-rgb), 0.68);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    backdrop-filter: blur(20px) saturate(150%);
-  }
 }
 
 .card:hover {
@@ -362,7 +488,7 @@
   margin: 12px 0 0;
   font-size: 0.875rem;
   line-height: 1.62;
-  color: var(--muted);
+  color: var(--prose);
 }
 
 .cardPain {
@@ -370,20 +496,22 @@
 }
 
 .cardFamiliar {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   font-size: 0.8125rem;
   line-height: 1.55;
-  color: var(--muted);
+  color: var(--prose);
 }
 
+/* `margin-top: auto` pushes the rule to the bottom of every card, so the three top
+   borders land on one baseline instead of staggering by 20px. */
 .cardProof {
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 20px;
-  padding-top: 18px;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 16px;
   border-top: 1px solid var(--rule);
   text-decoration: none;
 }
@@ -395,7 +523,7 @@
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--rule);
+  text-decoration-color: rgba(var(--ink-rgb), 0.3);
 }
 
 .cardProof:hover .cardProofLabel {
@@ -405,7 +533,8 @@
 .cardProofHash {
   font-family: var(--font-hash);
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--ink);
+  opacity: 0.62;
   overflow-wrap: anywhere;
 }
 
@@ -413,26 +542,28 @@
 
 /*
  * The load-bearing surface. Kept flat and opaque on purpose — no blur behind a hash.
- * Rows are a 3-column grid on desktop so numbers, labels and states all line up.
+ * Capped at 720px: across the full 1040px container the label column left a 276–612px
+ * hole between the label and its state chip.
  */
 .beats {
   position: relative;
   list-style: none;
   margin: 32px 0 0;
+  max-width: 720px;
   padding: 6px;
   border-radius: var(--radius-md);
   background: rgba(var(--paper-rgb), 0.92);
   box-shadow:
     0 1px 2px rgba(var(--ink-rgb), 0.04),
-    0 20px 46px -26px rgba(var(--ink-rgb), 0.3);
+    0 16px 48px -24px rgba(var(--ink-rgb), 0.3);
 }
 
 .beat {
   display: grid;
   grid-template-columns: 2.25rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px 20px;
-  padding: 15px 16px;
+  gap: 4px 24px;
+  padding: 16px;
   border-radius: var(--radius-sm);
   transition: background-color 160ms ease;
 }
@@ -455,7 +586,7 @@
 .beatMain {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -471,7 +602,8 @@
   font-family: var(--font-hash);
   font-size: 0.75rem;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--ink);
+  opacity: 0.62;
   overflow-wrap: anywhere;
 }
 
@@ -488,9 +620,9 @@
 .stateFail {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   border-radius: 999px;
-  padding: 5px 11px;
+  padding: 4px 12px;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.005em;
@@ -514,20 +646,20 @@
   line-height: 1;
 }
 
+/* Ink, not muted. These are the sixteen links the page exists to carry. */
 .beatLink {
   flex-shrink: 0;
   font-family: var(--font-hash);
-  font-size: 0.75rem;
-  color: var(--muted);
+  font-size: 0.8125rem;
+  color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--rule);
+  text-decoration-color: rgba(var(--ink-rgb), 0.3);
   white-space: nowrap;
   transition: transform 160ms ease;
 }
 
 .beatLink:hover {
-  color: var(--ink);
   text-decoration-color: var(--ink);
   transform: scale(1.04);
 }
@@ -536,57 +668,62 @@
   transform: scale(0.98);
 }
 
-/* ---------------------------------------------------------------- stat pair */
+/* ------------------------------------------------------------- settlement */
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-top: 22px;
-}
-
-.stat {
+/*
+ * One sentence with decimals, because `939042` requires knowing USDC.e has six of
+ * them. The raw base units stay beneath so the revert data can still be matched.
+ */
+.settlement {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  margin-top: 24px;
+  max-width: 720px;
   border-radius: var(--radius-md);
-  padding: 20px 22px;
-  background: rgba(var(--paper-rgb), 0.86);
+  padding: 24px;
+  background: rgba(var(--paper-rgb), 0.72);
+  box-shadow:
+    0 1px 2px rgba(var(--ink-rgb), 0.04),
+    0 16px 40px -24px rgba(var(--ink-rgb), 0.28);
 }
 
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .stat {
-    background: rgba(var(--paper-rgb), 0.68);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
-    backdrop-filter: blur(18px) saturate(150%);
-  }
-}
-
-.statLabel {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.statValue {
-  font-family: var(--font-hash);
-  font-size: 1.75rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+.settlementLine {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  letter-spacing: -0.012em;
   color: var(--ink);
-  overflow-wrap: anywhere;
 }
 
-.statUnit {
+.settleFigure {
+  font-family: var(--font-hash);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.settleRefused {
+  color: var(--fail);
+}
+
+.settleReceived {
+  color: var(--pass);
+}
+
+.settlementRaw {
+  margin: 12px 0 0;
+  font-family: var(--font-hash);
   font-size: 0.75rem;
-  color: var(--muted);
+  line-height: 1.6;
+  color: var(--ink);
+  opacity: 0.62;
+  overflow-wrap: anywhere;
 }
 
 /* ------------------------------------------------------------------- limits */
 
 .limits {
-  margin: 28px 0 0;
+  margin: 32px 0 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -596,10 +733,10 @@
 
 .limit {
   position: relative;
-  padding-left: 22px;
+  padding-left: 24px;
   font-size: 0.9375rem;
   line-height: 1.68;
-  color: var(--muted);
+  color: var(--prose);
 }
 
 .limit::before {
@@ -623,8 +760,7 @@
 .contracts {
   position: relative;
   display: grid;
-  gap: 2px;
-  margin-top: 6px;
+  margin-top: 32px;
   border-radius: var(--radius-md);
   padding: 6px;
   background: rgba(var(--paper-rgb), 0.86);
@@ -635,8 +771,8 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px 20px;
-  padding: 13px 16px;
+  gap: 4px 24px;
+  padding: 16px;
   border-radius: var(--radius-sm);
 }
 
@@ -646,16 +782,16 @@
 
 .contractLabel {
   font-size: 0.8125rem;
-  color: var(--muted);
+  color: var(--prose);
 }
 
 .contractLink {
   font-family: var(--font-hash);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--rule);
+  text-decoration-color: rgba(var(--ink-rgb), 0.3);
   word-break: break-all;
   overflow-wrap: anywhere;
   min-width: 0;
@@ -673,15 +809,23 @@
   }
 
   .heroInner {
-    padding: 22px 20px 36px;
+    padding: 24px 16px 32px;
   }
 
   .nav {
     margin-bottom: 48px;
   }
 
+  .heroGrid {
+    gap: 32px;
+  }
+
+  .heroProof {
+    padding: 16px;
+  }
+
   .body {
-    padding: 56px 14px 72px;
+    padding: 48px 16px 64px;
     gap: 64px;
   }
 
@@ -693,8 +837,8 @@
   .beat {
     grid-template-columns: 2rem minmax(0, 1fr);
     align-items: start;
-    padding: 15px 13px;
-    gap: 10px 12px;
+    padding: 16px 12px;
+    gap: 8px 12px;
   }
 
   .beatIndex {
@@ -708,13 +852,24 @@
     gap: 8px 12px;
   }
 
+  /* ~34px tap target instead of 18px. */
   .beatLink {
+    display: inline-block;
+    padding: 8px 0;
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
+  .settlement {
+    padding: 16px;
+  }
+
+  .settlementLine {
+    font-size: 1rem;
+  }
+
   .contract {
-    padding: 12px 13px;
+    padding: 12px;
   }
 }
 

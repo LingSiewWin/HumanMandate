@@ -48,7 +48,7 @@ Two properties fall out of this shape:
 
 Projects on [agentbook.world](https://agentbook.world) use AgentKit to gate **HTTP** endpoints. None we measured use AgentBook inside a contract to guard **money**. We read the live AgentBook from Solidity and revert on-chain.
 
-## Live on World Chain mainnet (480)
+## Live on World Chain mainnet
 
 | Contract | Address |
 |---|---|
@@ -151,23 +151,6 @@ forge test
 **48/48 passing**, including 4 fork tests against the live World Chain AgentBook (pinned block 32845385). The one that matters most:
 
 - `test_a_bad_route_is_refused_even_though_the_cap_was_respected` — the cap is obeyed and the transaction is still refused
-
-## Honest limits
-
-1. The mandate moves one ERC-20 to one fixed payee. This is not a general-purpose consumer card; there is no merchant network behind it.
-2. AgentBook `register()` has no ownership check — personhood raises the cost of a clean identity; it does **not** make respawn impossible.
-3. World App revokes ERC-20 approvals after each transaction, so standing debit from the in-app World wallet is not possible today. The payer must be a normal EOA or smart account. This is also the reason a mandate mapping is needed at all.
-4. The liveness attestor is a single signing key, deliberately separate from the deployer key. Compromising it would allow forged step-up approvals. Production would want a threshold or MPC arrangement.
-5. Demonstrations of the mandate used a test token; the Uniswap leg used real WETH and USDC.e.
-6. Hackathon-stage and unaudited.
-
-An earlier deployment (`0x87BEFf69…9050`) carried the World App phone end-to-end run, including a real Selfie Check → `raiseLimits`. That contract is superseded; the phone run needs repeating against the current address once it is allowlisted in the Developer Portal.
-
-## Partner tracks
-
-- World **AgentKit** — on-chain human-bound enforcement of money, not API access
-- World **Selfie Check** — step-up for privilege escalation only
-- **Uniswap Trading API** — execution venue, with the output floor enforced on-chain
 
 ## AI usage disclosure
 

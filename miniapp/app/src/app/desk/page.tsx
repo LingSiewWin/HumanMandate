@@ -122,8 +122,8 @@ export default function DeskPage() {
               <img
                 src="/brand/world-offwhite.svg"
                 alt=""
-                width={44}
-                height={44}
+                width={96}
+                height={96}
                 className={styles.logo}
               />
             </span>

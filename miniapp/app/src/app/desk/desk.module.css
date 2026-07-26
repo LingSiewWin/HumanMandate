@@ -346,9 +346,12 @@
 .logo {
   display: block;
   /* The mark now carries the corner on its own, since the wordmark moved into
-     the hero and the nav no longer repeats the product name beside it. */
-  width: 44px;
-  height: 44px;
+     the hero and the nav no longer repeats the product name beside it.
+     The artwork sits in a square canvas with generous built-in padding, so the
+     box has to be larger than the mark should optically appear. */
+  width: 96px;
+  height: 96px;
+  margin: -24px 0 -24px -24px;
 }
 
 .brandName {

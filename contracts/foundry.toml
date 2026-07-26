@@ -11,7 +11,8 @@ remappings = [
     # OpenZeppelin resolves DIRECTLY — the core contracts must compile without v4-periphery.
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "openzeppelin-contracts/=lib/openzeppelin-contracts/",
-    # Uniswap v4 is only needed by the hook/adapter tests.
+    # Uniswap v4 is only reachable from contracts/legacy/, which is not a compiled source
+    # path. Nothing in src/, test/ or script/ imports it — see `./bootstrap.sh --legacy`.
     "v4-periphery/=lib/v4-periphery/",
     "@uniswap/v4-core/=lib/v4-periphery/lib/v4-core/",
     "solmate/=lib/v4-periphery/lib/v4-core/lib/solmate/",

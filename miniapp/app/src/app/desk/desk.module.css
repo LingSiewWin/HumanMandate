@@ -1,0 +1,254 @@
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+}
+
+.hero {
+  animation: hm-rise 0.45s ease-out both;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.logo {
+  height: 32px;
+  width: 32px;
+  display: block;
+}
+
+.brandName {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink);
+}
+
+.headline {
+  margin: 0;
+  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--hm-ink);
+  max-width: 16ch;
+}
+
+.deck {
+  margin: 20px 0 0;
+  font-size: clamp(1rem, 1.6vw, 1.1875rem);
+  line-height: 1.5;
+  color: var(--hm-ink-soft);
+  max-width: 56ch;
+}
+
+.cta {
+  display: inline-block;
+  margin-top: 28px;
+  padding: 13px 24px;
+  border-radius: 999px;
+  background: var(--hm-primary);
+  color: var(--hm-primary-fg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.section {
+  animation: hm-rise 0.45s ease-out 0.08s both;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.4vw, 1.625rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--hm-ink);
+}
+
+.sectionNote {
+  margin: 10px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--hm-ink-muted);
+  max-width: 62ch;
+}
+
+.grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  border: 1px solid var(--hm-line);
+  border-radius: var(--hm-radius, 1rem);
+  padding: 24px;
+  background: var(--hm-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.cardTab {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hm-ink-muted);
+}
+
+.cardName {
+  margin: 10px 0 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--hm-ink);
+}
+
+.cardWho,
+.cardPain,
+.cardSetup {
+  margin: 10px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--hm-ink-soft);
+}
+
+.cardPain {
+  color: var(--hm-ink);
+}
+
+.cardFamiliar {
+  margin: 14px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--hm-ink-muted);
+}
+
+.cardProof {
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgb(var(--info-700, 0 74 204));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.beats {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hm-line);
+}
+
+.beat {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hm-line);
+}
+
+.beatIndex {
+  flex-shrink: 0;
+  width: 1.5rem;
+  font-family: var(--font-code);
+  font-size: 0.875rem;
+  color: var(--hm-ink-muted);
+}
+
+.beatBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex: 1;
+  min-width: 0;
+}
+
+.beatLabel {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink);
+}
+
+.beatFail {
+  color: var(--hm-danger-ink);
+  font-weight: 600;
+}
+
+.beatLink {
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  color: rgb(var(--info-700, 0 74 204));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.limits {
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  max-width: 68ch;
+}
+
+.limits li {
+  padding-left: 18px;
+  position: relative;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--hm-ink-soft);
+}
+
+.limits li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 1px;
+  background: var(--hm-line-strong);
+}
+
+.footer {
+  display: grid;
+  gap: 10px;
+  padding-top: 28px;
+  border-top: 1px solid var(--hm-line);
+}
+
+.contract {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.contract a {
+  font-family: var(--font-code);
+  color: var(--hm-ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-all;
+}
+
+.contractLabel {
+  color: var(--hm-ink-muted);
+}

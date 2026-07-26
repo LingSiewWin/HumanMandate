@@ -411,10 +411,16 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         <p className={styles.subcopy}>
           Like a company card: daily limit, one payee, freeze anytime.
         </p>
+        {/* Claiming "Signed in" with no wallet resolved is a lie the user can see through
+            the moment every button stays disabled. Say which state we are actually in. */}
         <div className={styles.identityRow}>
           <div className={styles.identityMeta}>
-            <div className={styles.identityLabel}>Signed in</div>
-            <div className={styles.identityName}>{username ?? 'World App user'}</div>
+            <div className={styles.identityLabel}>
+              {wallet ? 'Signed in' : 'Not connected'}
+            </div>
+            <div className={styles.identityName}>
+              {wallet ? (username ?? 'World App user') : 'Open in World App to sign in'}
+            </div>
           </div>
           <Marble src={avatar} className="w-11" />
         </div>

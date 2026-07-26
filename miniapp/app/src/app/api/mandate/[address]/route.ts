@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, isAddress } from 'viem';
+import { createPublicClient, http, isAddress, isHex } from 'viem';
 import { worldchain } from 'viem/chains';
 import {
   DEFAULT_MANDATE_ID,
@@ -24,6 +24,14 @@ export async function GET(
   // One payer can hold many mandates; the app manages one named card by default.
   const mandateId = (req.nextUrl.searchParams.get('mandateId') ??
     DEFAULT_MANDATE_ID) as `0x${string}`;
+  // A bad id is a client error. Letting viem throw surfaced it as a 502 with the
+  // library's internals in the body, which reads as though the chain was at fault.
+  if (!isHex(mandateId) || mandateId.length !== 66) {
+    return NextResponse.json(
+      { error: 'invalid mandateId', detail: 'expected 32-byte hex (0x + 64 chars)' },
+      { status: 400 },
+    );
+  }
 
   try {
     const client = createPublicClient({

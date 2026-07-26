@@ -299,7 +299,7 @@
 
 <section style="border-top:none;padding-top:8px;margin-top:8px">
   <div class="secno">ABSTRACT</div>
-  <p class="lead">HumanMandate is a payment contract whose spending rules are enforced against an anonymous human identifier rather than against a wallet address. It reads World's AgentBook registry from inside the payment path, so any agent wallet a given person operates draws on that person's single budget, and revoking the mandate cuts off every address that person controls — including addresses created afterwards. Routine spending inside the caps requires nobody present; widening the caps requires a fresh liveness attestation whose EIP-712 digest is bound to the specific amount and the specific payee. The system is deployed on World Chain mainnet, with eleven transactions on the live contract covering both the permitted paths and the designed refusals.</p>
+  <p class="lead">HumanMandate is a payment contract whose spending rules are enforced against an anonymous human identifier rather than against a wallet address. It reads World's AgentBook registry from inside the payment path, so any agent wallet a given person operates draws on that person's single budget, and revoking the mandate cuts off every address that person controls — including addresses created afterwards. Routine spending inside the caps requires nobody present; widening the caps requires a fresh liveness attestation whose EIP-712 digest is bound to the specific amount and the specific payee. A second contract, MandateSwapper, lets a mandated agent route what it spends through the Uniswap Trading API into whichever asset the payer chose, without widening what may be spent, by measuring and enforcing a floor on the output actually received rather than merely capping the input. The system is deployed on World Chain mainnet, with eleven transactions on the live HumanMandate contract and five on the live MandateSwapper contract, covering both the permitted paths and the designed refusals.</p>
 </section>
 
 <section>
@@ -405,6 +405,89 @@
 
 <section>
   <div class="secno">6</div>
+  <h2>MandateSwapper: a ceiling on spend is not a floor on value received</h2>
+
+  <p>A mandate on its own moves one ERC-20 to one fixed payee. <code>MandateSwapper</code>, deployed at <span class="mono">0x4054fC0708799B906276984575cDfaBbe1Df45e9</span> on World Chain mainnet, lets a mandated agent convert what it is allowed to spend into the asset the payer chose, routed by the Uniswap Trading API, without widening what may be spent. The payer fixes the input token, the output token and the payee via <code>setRoute</code>; the agent chooses only timing and the route calldata.</p>
+
+  <h3 style="margin-top:24px">The security argument</h3>
+  <p>A spending cap counts what <em>leaves</em> the payer. Once a swap sits between the agent and the payee, the cap stops protecting anything on its own: an agent can stay under the cap indefinitely and still drain value by routing through a poor pool or sandwiching itself. The amount spent looks obedient; the amount received does not.</p>
+  <p>So the contract measures the <em>actual</em> balance delta of the output token and refuses to settle unless it clears a floor the caller commits to. A cap with no floor on the output is not a cap. This threat exists only because a spend authorisation and a swap were combined; neither piece has it alone — <code>HumanMandate</code> alone has no swap to be robbed through, and a swap alone has no standing budget to protect. Putting the two together is what creates the gap, and the output floor is what closes it.</p>
+
+  <h3 style="margin-top:24px">Why it is a separate contract</h3>
+  <p><code>HumanMandate.pull</code> authenticates <code>msg.sender</code> against World's registry. If the swapper called <code>pull</code> on the agent's behalf, <code>msg.sender</code> would be the swapper, which has no human behind it, and every spend would revert <code>NotHumanBacked</code>. So the agent calls <code>pull</code> itself — funds land at the swapper because the payer fixed it as the mandate's recipient — and then calls <code>settle</code>. Both legs are the agent's own transactions.</p>
+  <p>Funds parked between the two legs are not loose. <code>settle</code> repeats the same fail-closed registry check the mandate performs, so only the authorised person can move them, and only ever to the payee the payer chose.</p>
+
+  <h3 style="margin-top:24px">Reference scoping across contracts</h3>
+  <p>Both contracts derive a person's reference by hashing <code>address(this)</code> into it, so the same human has a different reference in each contract — the same construction described in section 3, applied a second time. This is deliberate: it stops the raw World ID nullifier becoming a handle that links a person across deployments. Confirmed on chain: the mandate's reference for the demo human is <span class="mono">0xf7239d8095344a430f5c0a039c948d1771f436b37c1bc0d5552ae96bdb5f774c</span> while the swapper's is <span class="mono">0xcf9cde3b5d8323a342c280e6c373b5098909114f19e2fce694b729d43b34e024</span> — one person, two contracts, two references, neither derivable from the other.</p>
+
+  <h3 style="margin-top:28px">The end-to-end run</h3>
+  <p>Real mainnet transactions, a real Uniswap Trading API route (routing type CLASSIC, 1054 bytes of calldata): WETH <span class="mono">0x4200000000000000000000000000000000000006</span> in, USDC.e <span class="mono">0x79A02482A880bCE3F13e09Da970dC34db4CD24d1</span> out, payee <span class="mono">0x1eBd8D2862c66b335D3CDB2f3479ee6B42DE69aD</span>.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Outcome</th>
+          <th>What it demonstrates</th>
+          <th>Selector / error</th>
+          <th>Transaction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="r-pass">
+          <td class="num">1</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Payer opens the mandate, paying out to the swapper</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xf8c784f4f8b386468a60211103cf97b68c8efda28af3916db2979f410b1f3d6e">0xf8c784f4f8b386468a60211103cf97b68c8efda28af3916db2979f410b1f3d6e</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">2</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Payer declares the route: input token, output token and payee, via <code>setRoute</code></td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x64d5c3c2ec7132ede57e4cf19ce4f37a9f1db0a175cba49475b9fbdf28fc914f">0x64d5c3c2ec7132ede57e4cf19ce4f37a9f1db0a175cba49475b9fbdf28fc914f</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">3</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Agent spends 0.0005 WETH under the cap</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x92cf187cd3be1d42e7300c7ae209d340f581320d3bf19ef6f39567d950118473">0x92cf187cd3be1d42e7300c7ae209d340f581320d3bf19ef6f39567d950118473</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">4</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">Settle demanding a floor the route could not pay &mdash; a designed refusal, broadcast deliberately with an explicit gas limit so it would be mined and therefore verifiable</td>
+          <td class="sel"><span class="fail">0x76baadda</span><br /><span class="muted">SlippageTooHigh(uint256,uint256)</span><br /><span class="muted">received=939042, minOut=1878084</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x354bd1260bb7a456215a7b4ffe0b515cef16e533c0ebd17de0bdf9afaec4ea1f">0x354bd1260bb7a456215a7b4ffe0b515cef16e533c0ebd17de0bdf9afaec4ea1f</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">5</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Settle with an honest floor &mdash; payee receives 939127 base units (0.939127 USDC.e)</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x33ad7da0b934af549ebaebddaeef7e8efa80371f70280504eb629fb6bbef09a5">0x33ad7da0b934af549ebaebddaeef7e8efa80371f70280504eb629fb6bbef09a5</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><span class="tag pass">Accepted</span> the rule permitted it</span>
+    <span><span class="tag fail">Refused</span> the rule refused it, by design, on-chain</span>
+  </div>
+
+  <div class="panel">
+    <h3>Transaction 4 is the load-bearing one</h3>
+    <p>It is not a failure — it is a designed refusal, and a revert that is never mined is not evidence. The quoted output was 939042 base units; the same route, settled with an honest floor in transaction 5, actually delivered 939127 base units to the payee — the route came out slightly ahead of its own quote. The contract does not reward or penalise that difference; it only ever checks that the floor the caller committed to was cleared.</p>
+    <p>The contract's test suite is 48/48 passing. The decisive test is named <code>test_a_bad_route_is_refused_even_though_the_cap_was_respected</code> — the name states the property directly: staying under the cap is not sufficient, the output has to clear its floor too.</p>
+  </div>
+</section>
+
+<section>
+  <div class="secno">7</div>
   <h2>Evidence</h2>
   <p>The contract is deployed and exercised on World Chain mainnet. Eleven transactions were mined against the same contract, <span class="mono">0x7fcEc100ADc4e89b09a92e3f7931161791D06054</span>.</p>
   <p>Five succeed. Six revert — <strong>and the six reverts are the point</strong>. Each is a designed refusal, mined deliberately so the refusal is verifiable on-chain rather than asserted in a slide. A rule you can only watch succeed is a rule you take on trust; a rule whose refusal is mined with a matching error selector is one anyone can check. Every revert reason below was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not assumed from the source.</p>
@@ -518,6 +601,7 @@
   <h3 style="margin-top:30px">Deployment</h3>
   <dl class="kv">
     <div><dt>HumanMandate</dt><dd>0x7fcEc100ADc4e89b09a92e3f7931161791D06054</dd></div>
+    <div><dt>MandateSwapper</dt><dd>0x4054fC0708799B906276984575cDfaBbe1Df45e9</dd></div>
     <div><dt>AgentBookRegistry adapter</dt><dd>0x9Ac36746eFbb8192b0D5BB8C0774026bff1b9aB4</dd></div>
     <div><dt>AgentBook (World)</dt><dd>0xA23aB2712eA7BBa896930544C7d6636a96b944dA</dd></div>
     <div><dt>Liveness attestor</dt><dd>0x9F05370815CC50Ab913Dc090632841C8cd161d6E</dd></div>
@@ -526,11 +610,11 @@
   </dl>
 
   <h3 style="margin-top:30px">Test suite</h3>
-  <p>40 tests pass across four suites: HumanMandate (18), DcaLeash (7), StepUp (11), AgentBookFork (4). The AgentBookFork suite runs against a real World Chain mainnet fork pinned at block 32845385, so the registry integration is tested against the deployed registry rather than a stand-in. Passing tests are not the evidence of record here — the eleven mainnet transactions are. The suite makes that behaviour reproducible; it does not substitute for it.</p>
+  <p>48/48 tests pass across five suites: HumanMandate (18), DcaLeash (7), StepUp (11), AgentBookFork (4), and MandateSwapper. The AgentBookFork suite runs against a real World Chain mainnet fork pinned at block 32845385, so the registry integration is tested against the deployed registry rather than a stand-in. The MandateSwapper suite includes <code>test_a_bad_route_is_refused_even_though_the_cap_was_respected</code>, covering the same floor-on-output property demonstrated on mainnet in section 6. Passing tests are not the evidence of record here — the mainnet transactions are. The suite makes that behaviour reproducible; it does not substitute for it.</p>
 </section>
 
 <section>
-  <div class="secno">7</div>
+  <div class="secno">8</div>
   <h2>Platform constraints</h2>
   <p>Four properties of the World App environment shaped the design. They are stated because they are load-bearing, not incidental.</p>
 
@@ -548,11 +632,14 @@
 </section>
 
 <section>
-  <div class="secno">8</div>
+  <div class="secno">9</div>
   <h2>Limitations and future work</h2>
 
   <h3 style="margin-top:20px">Scope of the instrument</h3>
   <p>The mandate moves one ERC-20 to one fixed payee. It is not a general-purpose consumer card, and there is no merchant network behind it. The fixed payee is a security property, but it is also a limit on what the thing currently is.</p>
+
+  <h3 style="margin-top:20px">Shared custody inside MandateSwapper</h3>
+  <p><code>settle</code> takes the contract's entire <code>tokenIn</code> balance as its input, and only the output is measured as a delta. If two mandates hold the same token parked in the swapper at the same time, one mandate's agent could route the other's tokens and deliver the proceeds to its own payee. The output floor does not help, because it constrains the value received, not whose value was spent. The root cause is that an ERC-20 transfer carries no sender context, so the swapper cannot attribute an incoming balance to a particular mandate; the clean fix is a mandate-side call that hands the amount over directly, which would require changing and redeploying both contracts. It is not built. Until it is, funds should not be left parked between the two legs, and a payer should not run two concurrent mandates through the swapper in the same token.</p>
 
   <h3 style="margin-top:20px">Test money</h3>
   <p>The on-chain demonstrations used a test token ("DemoUSD"), not real money. The contract logic and the registry read are exercised on mainnet; the value moved is not real value.</p>

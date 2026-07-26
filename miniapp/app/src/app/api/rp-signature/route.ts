@@ -14,7 +14,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const { action } = await req.json();
+  // An unparseable body threw here and Next answered 500 with an empty response,
+  // which reads like the server died rather than the request being wrong.
+  let action: unknown;
+  try {
+    ({ action } = await req.json());
+  } catch {
+    return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });
+  }
+  if (typeof action !== 'string' || action.length === 0) {
+    return NextResponse.json({ error: 'action is required' }, { status: 400 });
+  }
+
   const sig = signRequest({ action, signingKeyHex: SIGNING_KEY });
 
   return NextResponse.json({

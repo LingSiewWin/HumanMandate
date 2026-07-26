@@ -31,8 +31,11 @@ export default function ClientProviders({
   children,
   session,
 }: ClientProvidersProps) {
+  // The app id goes inside a nested `props` object, not as a direct prop — see
+  // minikit-js/build/minikit-provider.d.ts. Omitting it installs MiniKit anonymously
+  // and logs "App ID not provided during install" on every page load.
   return (
-    <MiniKitProvider>
+    <MiniKitProvider props={{ appId: process.env.NEXT_PUBLIC_APP_ID }}>
       <SessionProvider session={session}>{children}</SessionProvider>
       <ErudaProvider />
     </MiniKitProvider>

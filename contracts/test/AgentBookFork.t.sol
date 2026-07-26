@@ -50,7 +50,6 @@ contract AgentBookForkTest is Test {
     function test_reads_a_real_humanId_from_mainnet_agentbook() public view {
         uint256 humanId = registry.humanOf(REGISTERED_AGENT);
         assertGt(humanId, 0, "fixture agent must be registered at this block");
-        assertGt(humanId, 0, "registered agent must resolve to a human");
         assertEq(registry.humanOf(NEVER_REGISTERED), 0, "unregistered agent must resolve to 0");
     }
 

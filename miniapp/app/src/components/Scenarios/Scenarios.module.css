@@ -1,0 +1,100 @@
+.strip {
+  animation: hm-rise 0.45s ease-out 0.08s both;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hm-ink-muted);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  appearance: none;
+  flex-shrink: 0;
+  border: 1px solid var(--hm-line-strong);
+  background: var(--hm-surface);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--hm-ink-soft);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.tabActive {
+  background: var(--hm-primary);
+  border-color: var(--hm-primary);
+  color: var(--hm-primary-fg);
+}
+
+.detail {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--hm-line);
+  border-radius: var(--hm-radius-sm, 0.625rem);
+  background: var(--hm-bg-subtle);
+}
+
+.who,
+.pain,
+.setup,
+.familiar {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--hm-ink);
+}
+
+.person {
+  font-weight: 600;
+}
+
+.pain,
+.setup {
+  margin-top: 8px;
+  color: var(--hm-ink-soft);
+}
+
+.familiar {
+  margin-top: 8px;
+  color: var(--hm-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.applied {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--hm-line);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--hm-ink-muted);
+}
+
+.footnote {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--hm-ink-muted);
+}

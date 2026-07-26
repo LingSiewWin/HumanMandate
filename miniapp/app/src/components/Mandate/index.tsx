@@ -17,6 +17,8 @@ import {
   oldFiveBeat,
   type MandateView,
 } from '@/lib/mandate';
+import { ScenarioStrip } from '@/components/Scenarios';
+import { defaultScenario, getScenario, type ScenarioId } from '@/lib/scenarios';
 import { useWalletAddress } from '@/hooks/useWalletAddress';
 import { IDKit, selfieCheckLegacy, type RpContext } from '@worldcoin/idkit';
 import {
@@ -87,8 +89,14 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [userOpHash, setUserOpHash] = useState('');
   const [lastUserOpHash, setLastUserOpHash] = useState('');
-  const [newCap, setNewCap] = useState('20');
+  const [newCap, setNewCap] = useState(defaultScenario.dailyLimit);
   const [newRecipient, setNewRecipient] = useState('');
+  const [scenarioId, setScenarioId] = useState<ScenarioId>(defaultScenario.id);
+
+  const onPickScenario = (id: ScenarioId) => {
+    setScenarioId(id);
+    setNewCap(getScenario(id).dailyLimit);
+  };
 
   const client = useMemo(
     () =>
@@ -339,6 +347,8 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           <Marble src={avatar} className="w-11" />
         </div>
       </header>
+
+      <ScenarioStrip selected={scenarioId} onSelect={onPickScenario} />
 
       <section className={styles.statusPanel} aria-live="polite">
         <div className={styles.statusHeader}>

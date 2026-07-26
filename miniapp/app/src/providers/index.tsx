@@ -19,24 +19,22 @@ interface ClientProvidersProps {
 /**
  * ClientProvider wraps the app with essential context providers.
  *
- * - ErudaProvider:
- *     - Should be used only in development.
- *     - Enables an in-browser console for logging and debugging.
- *
  * - MiniKitProvider:
  *     - Required for MiniKit functionality.
  *
- * This component ensures both providers are available to all child components.
+ * - ErudaProvider (dev only):
+ *     - In-browser console for debugging inside the World App webview.
+ *     - Mounted as a sibling: it loads with `ssr: false`, and wrapping the tree
+ *       in it would bail the whole app out of SSR (blank first paint on phones).
  */
 export default function ClientProviders({
   children,
   session,
 }: ClientProvidersProps) {
   return (
-    <ErudaProvider>
-      <MiniKitProvider>
-        <SessionProvider session={session}>{children}</SessionProvider>
-      </MiniKitProvider>
-    </ErudaProvider>
+    <MiniKitProvider>
+      <SessionProvider session={session}>{children}</SessionProvider>
+      <ErudaProvider />
+    </MiniKitProvider>
   );
 }

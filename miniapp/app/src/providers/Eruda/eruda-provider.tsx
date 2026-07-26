@@ -1,9 +1,10 @@
 'use client';
 
 import eruda from 'eruda';
-import { ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
 
-export const Eruda = (props: { children: ReactNode }) => {
+/** Leaf, not a wrapper: keeps the `ssr: false` bailout off the app tree. */
+export const Eruda = () => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -14,5 +15,5 @@ export const Eruda = (props: { children: ReactNode }) => {
     }
   }, []);
 
-  return <>{props.children}</>;
+  return null;
 };

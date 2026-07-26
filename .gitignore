@@ -30,3 +30,6 @@ nullifiers.json
 .vercel/
 
 .keys/
+
+# local browser / MCP artifacts
+.playwright-mcp/

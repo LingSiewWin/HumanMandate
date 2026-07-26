@@ -20,31 +20,31 @@ Built at **ETHGlobal Lisbon 2026**.
 Every branch that ends in a refusal is a real mainnet transaction, linked further down.
 
 ```mermaid
-flowchart TD
-    A["Agent address<br/>(any address the person operates)"] --> B["HumanMandate.pull"]
-    B --> C{"Is a human<br/>behind this address?"}
-    C -->|no| X1["NotHumanBacked"]
-    C -->|yes| D{"Is it the person<br/>the payer authorised?"}
-    D -->|no| X2["WrongHuman"]
-    D -->|yes| E{"Within the per-payment<br/>and rolling 24h caps?"}
-    E -->|no| X3["PerTxCapExceeded<br/>CapExceeded"]
-    E -->|yes| F["Funds move to the payee<br/>fixed at authorisation"]
+flowchart LR
+    A["Any address<br/>the person operates"] --> B{"Human<br/>behind it?"}
+    B -->|no| R1["NotHumanBacked"]
+    B -->|yes| C{"The person the<br/>payer authorised?"}
+    C -->|no| R2["WrongHuman"]
+    C -->|yes| D{"Within the per-payment<br/>and rolling 24h caps?"}
+    D -->|no| R3["PerTxCapExceeded<br/>CapExceeded"]
+    D -->|yes| E["Paid to the payee<br/>fixed at authorisation"]
 
-    C -. reads .-> R[("World AgentBook<br/>lookupHuman(address)")]
-    D -. reads .-> R
+    K[("World AgentBook<br/>lookupHuman()")] -.->|"answers both gates"| B
 
-    F --> G["MandateSwapper.settle<br/>(only when a route is set)"]
-    G --> H["Uniswap Trading API route"]
-    H --> I{"Did the payee actually<br/>receive at least the floor?"}
-    I -->|no| X4["SlippageTooHigh"]
-    I -->|yes| J["Payee paid in the asset<br/>the payer chose"]
+    E --> F["Uniswap Trading API<br/>route"]
+    F --> G{"Did the payee receive<br/>at least the floor?"}
+    G -->|no| R4["SlippageTooHigh"]
+    G -->|yes| H["Payee paid in the<br/>asset the payer chose"]
 
-    classDef refuse fill:#fdecea,stroke:#b3261e,color:#b3261e;
-    classDef allow fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d;
-    classDef ext fill:#f4f3f1,stroke:#8b8987,color:#2d2c2c;
-    class X1,X2,X3,X4 refuse;
-    class F,J allow;
-    class R,H ext;
+    classDef default fill:#f9f9f8,stroke:#8b8987,color:#2d2c2c,stroke-width:1px;
+    classDef gate fill:#ffffff,stroke:#2d2c2c,color:#2d2c2c,stroke-width:1.5px;
+    classDef refuse fill:#fdecea,stroke:#b3261e,color:#b3261e,stroke-width:1.5px;
+    classDef allow fill:#e8f5ee,stroke:#1f7a4d,color:#1f7a4d,stroke-width:1.5px;
+    classDef ext fill:#efedea,stroke:#8b8987,color:#2d2c2c,stroke-dasharray:3 3;
+    class B,C,D,G gate;
+    class R1,R2,R3,R4 refuse;
+    class E,H allow;
+    class K ext;
 ```
 
 Two properties fall out of this shape:

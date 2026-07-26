@@ -10,18 +10,13 @@ import {
   MANDATE_CHAIN_ID,
   WORLDCHAIN_RPC,
   DEFAULT_MANDATE_ID,
-  REGISTRY_ADDRESS,
   explorerAddress,
-  explorerTx,
   mandateAbi,
-  demoBeats,
   type MandateView,
 } from '@/lib/mandate';
 import { ActivityFeed } from '@/components/Activity';
 import { Handoff } from '@/components/Handoff';
 import { RoutePanel } from '@/components/Route';
-import { ScenarioStrip } from '@/components/Scenarios';
-import { defaultScenario, getScenario, type ScenarioId } from '@/lib/scenarios';
 import { useWalletAddress } from '@/hooks/useWalletAddress';
 import { WINDOW_SECONDS } from '@/components/Spending/format';
 import { IDKit, selfieCheckLegacy, type RpContext } from '@worldcoin/idkit';
@@ -52,6 +47,13 @@ function shortId(id: string): string {
 }
 
 const MAX_HUMAN_ID = BigInt(2) ** BigInt(256);
+
+/**
+ * The cap `authorize` actually writes on-chain, as a whole number. It seeds the
+ * "New daily limit" field so the field opens on the card's real value instead of a
+ * number invented for a story.
+ */
+const STARTING_CAP = (DEMO_INITIAL_CAP / BigInt(10) ** BigInt(18)).toString();
 
 function formatUnitsLoose(raw: string, decimals = 18): string {
   try {
@@ -100,13 +102,11 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const [feedback, setFeedback] = useState<'pending' | 'success' | 'failed' | undefined>();
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [userOpHash, setUserOpHash] = useState('');
-  const [lastUserOpHash, setLastUserOpHash] = useState('');
-  const [newCap, setNewCap] = useState(defaultScenario.dailyLimit);
+  const [newCap, setNewCap] = useState(STARTING_CAP);
   const [newRecipient, setNewRecipient] = useState('');
-  const [scenarioId, setScenarioId] = useState<ScenarioId>(defaultScenario.id);
-  const [agentOwner, setAgentOwner] = useState<'mine' | 'demo'>('mine');
+  const [agentOwner, setAgentOwner] = useState<'mine' | 'operator'>('mine');
   const [ownHumanId, setOwnHumanId] = useState('');
-  const [demoAck, setDemoAck] = useState(false);
+  const [operatorAck, setOperatorAck] = useState(false);
   /** Bumped after every confirmed write so the on-chain feed re-reads. */
   const [chainVersion, setChainVersion] = useState(0);
 
@@ -119,15 +119,9 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
     return value;
   }, [ownHumanId]);
 
-  const authorizedHumanId = agentOwner === 'demo' ? DEMO_AGENT_HUMAN_ID : ownHumanIdValue;
+  const authorizedHumanId = agentOwner === 'operator' ? DEMO_AGENT_HUMAN_ID : ownHumanIdValue;
   const canAuthorize =
-    Boolean(wallet) && authorizedHumanId !== null && (agentOwner !== 'demo' || demoAck);
-  const startingCap = formatUnitsLoose(DEMO_INITIAL_CAP.toString());
-
-  const onPickScenario = (id: ScenarioId) => {
-    setScenarioId(id);
-    setNewCap(getScenario(id).dailyLimit);
-  };
+    Boolean(wallet) && authorizedHumanId !== null && (agentOwner !== 'operator' || operatorAck);
 
   const client = useMemo(
     () =>
@@ -206,13 +200,12 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
     });
     if (!result.data?.userOpHash) throw new Error('No userOpHash returned');
     setUserOpHash(result.data.userOpHash);
-    setLastUserOpHash(result.data.userOpHash);
   };
 
   /**
    * Grants a standing pull on THIS wallet to every agent registered by one person.
-   * The humanId is never implicit: it is either one the user pasted, or the project's
-   * demo operator behind an explicit, disclosed opt-in.
+   * The humanId is never implicit: it is either one the user pasted, or this app's own
+   * operator behind an explicit, ticked opt-in.
    */
   const onAuthorize = async () => {
     setBusy('authorize');
@@ -223,8 +216,8 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
       if (authorizedHumanId === null) {
         throw new Error('Paste the Person ID of the assistant you want to allow');
       }
-      if (agentOwner === 'demo' && !demoAck) {
-        throw new Error('Tick the box to confirm you are allowing the demo assistant');
+      if (agentOwner === 'operator' && !operatorAck) {
+        throw new Error('Tick the box to confirm whose assistant you are allowing');
       }
       // The contract stores a chain- and contract-scoped reference, never the raw
       // nullifier, so the id is hashed on-chain before it is ever written down.
@@ -389,16 +382,14 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
   const spentNow = hasMandate && !windowElapsed ? mandate!.spentInWindow : '0';
   const usage = hasMandate ? capUsagePercent(spentNow, mandate!.windowCap) : 0;
 
+  /* The chip carries the state. It used to be followed by a sentence restating it. */
   let statusLabel = 'Not set up';
-  let statusBlurb = 'No spending card for this account yet.';
   let chipVariant: 'default' | 'success' | 'error' = 'default';
   if (hasMandate && mandate?.active) {
     statusLabel = 'On';
-    statusBlurb = 'Your assistant can spend up to the daily limit, only to the locked payee.';
     chipVariant = 'success';
   } else if (hasMandate && mandate && !mandate.active) {
     statusLabel = 'Stopped';
-    statusBlurb = 'Spending is frozen. Nothing new can go out.';
     chipVariant = 'error';
   }
 
@@ -416,12 +407,6 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           />
           <p className={styles.brandName}>HumanMandate</p>
         </div>
-        <h1 className={styles.thesis}>
-          A spending limit for your assistant — only you can raise it or stop it.
-        </h1>
-        <p className={styles.subcopy}>
-          Like a company card: daily limit, one payee, freeze anytime.
-        </p>
         {/* Claiming "Signed in" with no wallet resolved is a lie the user can see through
             the moment every button stays disabled. Say which state we are actually in. */}
         <div className={styles.identityRow}>
@@ -436,8 +421,6 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           <Marble src={avatar} className="w-11" />
         </div>
       </header>
-
-      <ScenarioStrip selected={scenarioId} onSelect={onPickScenario} />
 
       <section className={styles.statusPanel} aria-live="polite">
         <div className={styles.statusHeader}>
@@ -454,11 +437,8 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             />
           </div>
         </div>
-        <p className={styles.statusBlurb}>{statusBlurb}</p>
-
-        {!wallet && (
-          <p className={styles.warnNote}>Open this in World App to see your card.</p>
-        )}
+        {/* Notifications only: the two states the user cannot act their way out of. */}
+        {!wallet && <p className={styles.warnNote}>Open in World App</p>}
         {loadError && <p className={styles.errorBox}>{loadError}</p>}
 
         {hasMandate && mandate && (
@@ -477,24 +457,11 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
                 <dd className={styles.metricValue}>{short(mandate.recipient)}</dd>
               </div>
             </dl>
+            {/* The bar is the read-out; the figures above it are the same two numbers. */}
             <div className={styles.capBar}>
               <Progress value={usage} className="w-full" />
-              <p className={styles.capCaption}>
-                {formatUnitsLoose(spentNow)} of {formatUnitsLoose(mandate.windowCap)} used
-                today
-              </p>
             </div>
           </>
-        )}
-
-        {mandate?.empty && (
-          <p className={styles.emptyNote}>
-            No card on this World account yet. Turn one on below, then raise the limit with your
-            face.
-          </p>
-        )}
-        {hasMandate && mandate && !mandate.active && (
-          <p className={styles.emptyNote}>Card stopped. Turn it back on to spend again.</p>
         )}
 
         <button type="button" className={styles.refreshBtn} onClick={() => void refresh()}>
@@ -529,20 +496,9 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           </p>
         )}
 
-        {lastUserOpHash && (
-          <p className={styles.userOp}>
-            Last UserOp: <span className={styles.userOpHash}>{lastUserOpHash}</span>
-            {' — '}copy this for E2E proof.
-          </p>
-        )}
-
         {(!hasMandate || (mandate && !mandate.active)) && (
           <div className={styles.setup}>
             <h3 className={styles.setupTitle}>Turn on the card</h3>
-            <p className={styles.setupIntro}>
-              You are about to let one person&rsquo;s assistant spend out of your wallet. Pick whose
-              assistant that is — there is no default.
-            </p>
 
             <div className={styles.modeRow} role="group" aria-label="Whose assistant">
               <button
@@ -555,11 +511,11 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
               </button>
               <button
                 type="button"
-                className={`${styles.modeBtn} ${agentOwner === 'demo' ? styles.modeBtnActive : ''}`}
-                aria-pressed={agentOwner === 'demo'}
-                onClick={() => setAgentOwner('demo')}
+                className={`${styles.modeBtn} ${agentOwner === 'operator' ? styles.modeBtnActive : ''}`}
+                aria-pressed={agentOwner === 'operator'}
+                onClick={() => setAgentOwner('operator')}
               >
-                The demo assistant
+                This app&rsquo;s assistant
               </button>
             </div>
 
@@ -573,90 +529,58 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
                   autoComplete="off"
                   spellCheck={false}
                 />
-                <p className={styles.hint}>
-                  On a computer, run this once and it prints your long Person ID number:
-                </p>
-                <code className={styles.codeLine}>
-                  npx @worldcoin/agentkit-cli register &lt;your assistant&rsquo;s wallet address&gt;
-                </code>
-                <p className={styles.hint}>
-                  Paste that number here. It is the person World will let spend — so it should be
-                  you.
-                </p>
                 {ownHumanId.length > 0 && ownHumanIdValue === null && (
-                  <p className={styles.fieldError}>
-                    That is not a Person ID yet — it is a long number, digits only.
-                  </p>
+                  <p className={styles.fieldError}>Digits only</p>
                 )}
               </div>
             ) : (
+              /*
+               * The only sentence left in the setup flow, and it stays: the user is
+               * handing a third party a standing pull on their own wallet. A control
+               * that does that without saying so is not a leaner UI, it is a trap.
+               */
               <div className={styles.demoWarn}>
-                <p className={styles.demoWarnTitle}>Demo — this is not you</p>
-                <p className={styles.demoWarnBody}>
-                  This lets the assistant of the person who built this app spend out of{' '}
-                  <strong>your</strong> wallet, up to the limit below, so you can watch the limit and
-                  the stop button work for real. Their Person ID:
-                </p>
                 <span className={styles.idValue}>{DEMO_AGENT_HUMAN_ID.toString()}</span>
                 <label className={styles.ackRow}>
                   <input
                     type="checkbox"
                     className={styles.ackBox}
-                    checked={demoAck}
-                    onChange={(e) => setDemoAck(e.target.checked)}
+                    checked={operatorAck}
+                    onChange={(e) => setOperatorAck(e.target.checked)}
                   />
-                  <span>
-                    I understand I am allowing someone else&rsquo;s assistant, and I can stop it at
-                    any time.
-                  </span>
+                  <span>Let this person&rsquo;s assistant spend from my wallet. I can stop it anytime.</span>
                 </label>
               </div>
             )}
 
-            <div className={styles.disclosure}>
-              <p className={styles.sectionLabel}>What you are signing</p>
-              <dl className={styles.disclosureList}>
-                <div className={styles.disclosureRow}>
-                  <dt className={styles.disclosureLabel}>Who can spend</dt>
-                  <dd className={styles.disclosureValue}>
-                    {agentOwner === 'demo'
-                      ? `The app team's assistant · ${shortId(DEMO_AGENT_HUMAN_ID.toString())}`
-                      : ownHumanIdValue !== null
-                        ? `Assistants owned by ${shortId(ownHumanIdValue.toString())}`
-                        : 'Nobody yet — paste a Person ID above'}
-                  </dd>
-                </div>
-                <div className={styles.disclosureRow}>
-                  <dt className={styles.disclosureLabel}>How much</dt>
-                  <dd className={styles.disclosureValue}>
-                    Up to {startingCap} {DEMO_TOKEN_SYMBOL} a day ({DEMO_TOKEN_SYMBOL} is test
-                    money, not real funds)
-                  </dd>
-                </div>
-                <div className={styles.disclosureRow}>
-                  <dt className={styles.disclosureLabel}>Where it can go</dt>
-                  <dd className={styles.disclosureValue}>
-                    Only to{' '}
-                    <a
-                      className={styles.beatLink}
-                      href={explorerAddress(DEMO_RECIPIENT)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {short(DEMO_RECIPIENT)}
-                    </a>
-                    {' — no other address'}
-                  </dd>
-                </div>
-                <div className={styles.disclosureRow}>
-                  <dt className={styles.disclosureLabel}>How to stop it</dt>
-                  <dd className={styles.disclosureValue}>
-                    Tap <strong>Stop spending</strong> below. It takes effect straight away, and it
-                    stops every assistant that person owns — new addresses included.
-                  </dd>
-                </div>
-              </dl>
-            </div>
+            {/* The three terms `authorize` writes on-chain. Values, not sentences. */}
+            <dl className={styles.disclosureList}>
+              <div className={styles.disclosureRow}>
+                <dt className={styles.disclosureLabel}>Who</dt>
+                <dd className={styles.disclosureValue}>
+                  {authorizedHumanId !== null ? shortId(authorizedHumanId.toString()) : '—'}
+                </dd>
+              </div>
+              <div className={styles.disclosureRow}>
+                <dt className={styles.disclosureLabel}>Cap</dt>
+                <dd className={styles.disclosureValue}>
+                  {STARTING_CAP} {DEMO_TOKEN_SYMBOL} / day
+                </dd>
+              </div>
+              <div className={styles.disclosureRow}>
+                <dt className={styles.disclosureLabel}>Payee</dt>
+                <dd className={styles.disclosureValue}>
+                  <a
+                    className={styles.beatLink}
+                    href={explorerAddress(DEMO_RECIPIENT)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {short(DEMO_RECIPIENT)}
+                  </a>
+                </dd>
+              </div>
+            </dl>
 
             <Button
               type="button"
@@ -668,10 +592,6 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
             >
               Turn on card
             </Button>
-            <p className={styles.hint}>
-              Nothing is signed until you confirm in World App. The contract must be whitelisted in
-              the Dev Portal or the transaction will not be offered.
-            </p>
           </div>
         )}
 
@@ -702,7 +622,6 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
           >
             Raise with face
           </Button>
-          <p className={styles.hint}>We’ll ask for your face before raising the limit.</p>
         </div>
 
         <Button
@@ -719,92 +638,12 @@ export function MandatePanel({ serverWallet }: MandatePanelProps) {
         {errorMsg && <p className={styles.errorBox}>{errorMsg}</p>}
       </section>
 
-      <section className={styles.evidence}>
-        <details className={styles.proofDetails}>
-          <summary className={styles.proofSummary}>Proof details</summary>
-          <p className={styles.evidenceIntro}>
-            Technical proof for judges — App uses the NEW contract. Do not conflate OLD hashes with
-            NEW.
-          </p>
-
-          {hasMandate && mandate && (
-            <div className={styles.advancedIds}>
-              <p className={styles.sectionLabel}>Advanced</p>
-              <div className={styles.contractRow}>
-                <span className={styles.contractLabel}>Allowed to spend (Person ID)</span>
-                <span className={styles.metricValue}>{shortId(mandate.humanRef)}</span>
-              </div>
-              <div className={styles.contractRow}>
-                <span className={styles.contractLabel}>Your account</span>
-                <span className={styles.metricValue}>{wallet ? short(wallet) : '—'}</span>
-              </div>
-              <p className={styles.hint}>
-                The Person ID is the number World gives this app for one person. It is not a name or
-                a wallet, but it is written into the contract, so anyone reading the chain can see
-                which mandates that person holds. Only the ones you turned on.
-              </p>
-              <p className={styles.hint}>
-                Face check re-authenticates before raising limits — not Orb-grade Proof of Human.
-                Contract must be whitelisted in Dev Portal for sendTransaction; without face check
-                the contract reverts LivenessRequired.
-              </p>
-            </div>
-          )}
-
-          <p className={styles.sectionLabel}>
-            Every rule, proved on {short(MANDATE_ADDRESS)}
-          </p>
-          <p className={styles.hint}>
-            One contract, one run. Each revert reason was recovered with <code>cast run</code> and
-            matched against <code>cast sig</code>. The pair that matters is the second and third
-            rows: an address the card never named spends, and an address with no human behind it
-            is refused — either one alone proves nothing.
-          </p>
-          <ul className={styles.beatList}>
-            {demoBeats.map((b) => (
-              <li key={b.tx} className={styles.beat}>
-                <span className={`${styles.beatLabel} ${b.ok ? '' : styles.beatFail}`}>
-                  {b.ok ? 'Pass' : 'Revert'} · {b.label}
-                  {b.selector && <> · {b.selector}</>}
-                </span>
-                <a
-                  className={styles.beatLink}
-                  href={explorerTx(b.tx)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {short(b.tx)}
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <div className={styles.contracts}>
-            <div className={styles.contractRow}>
-              <span className={styles.contractLabel}>Mandate</span>
-              <a
-                className={styles.beatLink}
-                href={explorerAddress(MANDATE_ADDRESS)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {short(MANDATE_ADDRESS)}
-              </a>
-            </div>
-            <div className={styles.contractRow}>
-              <span className={styles.contractLabel}>Registry</span>
-              <a
-                className={styles.beatLink}
-                href={explorerAddress(REGISTRY_ADDRESS)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {short(REGISTRY_ADDRESS)}
-              </a>
-            </div>
-          </div>
-        </details>
-      </section>
+      {/*
+        The "Proof details" block that used to close this screen — the judge-facing
+        essay, the eleven demo hashes, the two contract rows — has moved out. It is
+        argument about the product, and it already lives on /desk, where the argument
+        belongs. What is left here is the card itself.
+      */}
     </div>
   );
 }

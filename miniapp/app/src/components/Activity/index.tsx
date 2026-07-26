@@ -89,20 +89,12 @@ export function ActivityFeed({ wallet, refreshKey = 0 }: ActivityFeedProps) {
         )}
       </div>
 
-      {error && (
-        <p className={styles.error}>
-          Could not read the chain: {error}. The feed shows only what the contract
-          actually recorded, so nothing is filled in from memory.
-        </p>
-      )}
+      {error && <p className={styles.error}>{error}</p>}
 
       {items === null && !error && <div className={styles.skeleton} aria-hidden />}
 
       {items && items.length === 0 && !error && (
-        <p className={styles.empty}>
-          Nothing yet. Once you create a card and your assistant spends on it, every
-          charge lands here — read back from World Chain, not from this app&apos;s memory.
-        </p>
+        <p className={styles.empty}>No activity yet</p>
       )}
 
       {items && items.length > 0 && (

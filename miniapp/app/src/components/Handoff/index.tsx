@@ -69,11 +69,6 @@ export function Handoff({ wallet, mandate }: HandoffProps) {
   return (
     <section className={styles.shell} aria-label="Hand the card over">
       <h2 className={styles.title}>Hand it to your assistant</h2>
-      <p className={styles.lede}>
-        Send them this. There is no secret in it — the contract checks who they
-        <em> are</em>, not what they know, so forwarding this to somebody else grants
-        them nothing.
-      </p>
 
       <div className={styles.card}>
         <div className={styles.cardTop}>
@@ -102,10 +97,6 @@ export function Handoff({ wallet, mandate }: HandoffProps) {
 
       <div className={styles.field}>
         <span className={styles.label}>What to send them</span>
-        <span className={styles.hint}>
-          They spend from their own registered agent address. You never see it, and it
-          can change without you doing anything.
-        </span>
         <div className={styles.copyRow}>
           <code className={styles.code}>{brief}</code>
           <button
@@ -117,11 +108,6 @@ export function Handoff({ wallet, mandate }: HandoffProps) {
           </button>
         </div>
       </div>
-
-      <p className={styles.note}>
-        Stopping the card stops the person, not the key. If they come back tomorrow on a
-        brand-new address, it is refused by the same rule that let the old one through.
-      </p>
     </section>
   );
 }

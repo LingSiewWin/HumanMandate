@@ -76,21 +76,12 @@ export function RoutePanel({ wallet, refreshKey = 0 }: RoutePanelProps) {
         {route?.set && <span className={styles.badge}>Route declared</span>}
       </div>
 
-      {error && (
-        <p className={styles.error}>
-          Could not read the chain: {error}. This panel shows only what the swapper
-          contract holds, so nothing is filled in from memory.
-        </p>
-      )}
+      {error && <p className={styles.error}>{error}</p>}
 
       {loading && !error && <div className={styles.skeleton} aria-hidden />}
 
       {!loading && !error && route && !route.set && (
-        <p className={styles.empty}>
-          No route declared for this card. The card pays out in whatever the payer
-          chose; until a route is set, it pays its fixed payee directly, in the same
-          token it spends.
-        </p>
+        <p className={styles.empty}>No route declared</p>
       )}
 
       {!loading && !error && route?.set && (
@@ -162,20 +153,10 @@ export function RoutePanel({ wallet, refreshKey = 0 }: RoutePanelProps) {
           ))}
         </ul>
         <p className={styles.figures}>
-          Quoted {formatUnits(QUOTED_OUT, TOKEN_OUT.decimals)} {TOKEN_OUT.symbol}, paid{' '}
-          {formatUnits(RECEIVED_OUT, TOKEN_OUT.decimals)} {TOKEN_OUT.symbol} — the route
-          came out slightly ahead of its quote.
+          Quoted {formatUnits(QUOTED_OUT, TOKEN_OUT.decimals)} · paid{' '}
+          {formatUnits(RECEIVED_OUT, TOKEN_OUT.decimals)} {TOKEN_OUT.symbol}
         </p>
       </div>
-
-      <p className={styles.note}>
-        Why the refusal matters: the daily cap counts what leaves the payer. Once a swap
-        sits in the middle, an agent can stay under that cap and still lose value by
-        routing badly, because the cap never looks at what comes out the other end. So
-        the contract is told a floor, and it refuses to settle unless the amount the
-        payee actually receives clears it. A cap with no floor on the output is not a
-        cap.
-      </p>
     </section>
   );
 }

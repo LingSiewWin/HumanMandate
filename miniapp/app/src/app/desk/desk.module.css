@@ -345,8 +345,10 @@
 
 .logo {
   display: block;
-  width: 26px;
-  height: 26px;
+  /* The mark now carries the corner on its own, since the wordmark moved into
+     the hero and the nav no longer repeats the product name beside it. */
+  width: 44px;
+  height: 44px;
 }
 
 .brandName {

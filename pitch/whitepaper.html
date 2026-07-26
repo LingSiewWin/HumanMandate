@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HumanMandate — spending authority bound to a person, not an address</title>
+<style>
+  @font-face {
+    font-family: 'WorldPro';
+    src: url('./assets/WorldProMVP.ttf') format('truetype');
+    font-display: swap;
+  }
+
+  :root {
+    --ink:    #2d2c2c;
+    --paper:  #f9f9f8;
+    --muted:  #8b8987;
+    --rule:   #e2e0dd;
+    --pass:   #1f7a4d;
+    --fail:   #b3261e;
+    --panel:  #f2f1ef;
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:   #f1f0ee;
+      --paper: #232222;
+      --muted: #9d9a97;
+      --rule:  #3c3a39;
+      --pass:  #56b98a;
+      --fail:  #e8796f;
+      --panel: #2b2a29;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: 'WorldPro', ui-sans-serif, -apple-system, 'Helvetica Neue', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    font-size: 17px;
+    padding: clamp(28px, 6vw, 96px) clamp(20px, 6vw, 64px) 96px;
+  }
+
+  .doc { max-width: 860px; margin: 0 auto; }
+
+  /* ---------- typography ---------- */
+
+  h1 {
+    font-size: clamp(30px, 5.2vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    font-weight: 500;
+    max-width: 20ch;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.6vw, 26px);
+    line-height: 1.2;
+    letter-spacing: -.015em;
+    font-weight: 500;
+    margin-bottom: 18px;
+    max-width: var(--measure);
+  }
+
+  h3 {
+    font-size: clamp(15px, 1.8vw, 17px);
+    line-height: 1.35;
+    font-weight: 500;
+    letter-spacing: -.005em;
+    margin-bottom: 8px;
+  }
+
+  p, li {
+    font-size: clamp(15px, 1.6vw, 17px);
+    line-height: 1.62;
+    max-width: var(--measure);
+  }
+
+  p + p { margin-top: 14px; }
+
+  .lead {
+    font-size: clamp(17px, 2vw, 20px);
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+
+  .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .muted { color: var(--muted); }
+
+  .small {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: var(--measure);
+  }
+
+  strong { font-weight: 600; }
+
+  code, .mono {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: .88em;
+    word-break: break-all;
+  }
+
+  code {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+
+  a { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--muted); }
+  a:hover { text-decoration-color: currentColor; }
+
+  ul, ol { padding-left: 20px; }
+  li { margin-top: 8px; }
+  li::marker { color: var(--muted); }
+
+  /* ---------- structure ---------- */
+
+  header.masthead { padding-bottom: 28px; }
+
+  .meta {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  section {
+    border-top: 1px solid var(--rule);
+    padding-top: 30px;
+    margin-top: 38px;
+  }
+
+  .secno {
+    font-size: 12px;
+    letter-spacing: .14em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-top: 20px;
+  }
+
+  .panel p, .panel li { max-width: 62ch; }
+
+  .formula {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--ink);
+    border-radius: 3px;
+    padding: 12px 14px;
+    margin: 18px 0;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ---------- key/value list ---------- */
+
+  dl.kv { margin-top: 18px; }
+  dl.kv > div {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 4px 20px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  dl.kv dt { font-size: 14px; color: var(--muted); }
+  dl.kv dd {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    word-break: break-all;
+  }
+  @media (max-width: 620px) {
+    dl.kv > div { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- tables ---------- */
+
+  .tablewrap {
+    overflow-x: auto;
+    margin-top: 20px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 640px;
+    font-size: 13.5px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  td.hash, td.sel { font-family: ui-monospace, 'SF Mono', Menlo, monospace; word-break: break-all; }
+  td.hash { min-width: 200px; }
+  td.num { color: var(--muted); font-variant-numeric: tabular-nums; width: 1%; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .pass { color: var(--pass); }
+  .fail { color: var(--fail); }
+
+  tr.r-pass td.what { border-left: 2px solid var(--pass); }
+  tr.r-fail td.what { border-left: 2px solid var(--fail); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+  /* ---------- threat grid ---------- */
+
+  .threat { margin-top: 8px; }
+  .threat > div {
+    border-top: 1px solid var(--rule);
+    padding: 18px 0 4px;
+  }
+  .threat h3 { margin-bottom: 10px; }
+  .can, .cant {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 4px 14px;
+    margin-top: 6px;
+  }
+  .can .lbl { color: var(--fail); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding-top: 3px; }
+  .cant .lbl { color: var(--pass); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding-top: 3px; }
+  .can p, .cant p { max-width: 60ch; }
+  @media (max-width: 620px) {
+    .can, .cant { grid-template-columns: 1fr; }
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 44px;
+    padding-top: 22px;
+  }
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header class="masthead">
+  <div class="kicker">Technical whitepaper &middot; World Chain</div>
+  <h1>HumanMandate: spending authority bound to a person, not an address</h1>
+  <div class="meta">
+    <span>ETHGlobal Lisbon 2026</span>
+    <span>World Chain mainnet &middot; chain id 480</span>
+    <span>Unaudited, hackathon-stage</span>
+  </div>
+</header>
+
+<section style="border-top:none;padding-top:8px;margin-top:8px">
+  <div class="secno">ABSTRACT</div>
+  <p class="lead">HumanMandate is a payment contract whose spending rules are enforced against an anonymous human identifier rather than against a wallet address. It reads World's AgentBook registry from inside the payment path, so any agent wallet a given person operates draws on that person's single budget, and revoking the mandate cuts off every address that person controls — including addresses created afterwards. Routine spending inside the caps requires nobody present; widening the caps requires a fresh liveness attestation whose EIP-712 digest is bound to the specific amount and the specific payee. The system is deployed on World Chain mainnet, with eleven transactions on the live contract covering both the permitted paths and the designed refusals.</p>
+</section>
+
+<section>
+  <div class="secno">1</div>
+  <h2>The problem: authority is attached to the wrong thing</h2>
+  <p>Every payment instrument in common use binds spending authority to a credential. A card number is a credential. A wallet address is a credential. An ERC-20 allowance is a credential-shaped grant: <code>owner &rarr; spender</code>, where <code>spender</code> is an address.</p>
+  <p>The consequence is uniform across all of them. When you cut off the credential, you have cut off the credential — not the party behind it. The card is cancelled; a new card is issued. The allowance is set to zero; the same operator asks for an allowance on a second address, which costs nothing and appears instantly.</p>
+  <p>This is tolerable when the party behind the credential is slow and reachable by other means. It stops being tolerable when the party is software that can mint a fresh address per task. Concretely: a payer authorises an agent to buy compute up to a daily limit; the agent misbehaves; the payer revokes. Nothing stops the same operator from deploying a second agent wallet under a second key and requesting a second authorisation, because to the contract that wallet is a stranger with a clean record. There is no primitive that says <em>this person's agents may spend up to X per day</em> — only primitives that say <em>this key may spend up to X</em>. The budget was never a budget for a party. It was a budget for a string of twenty bytes.</p>
+</section>
+
+<section>
+  <div class="secno">2</div>
+  <h2>Why existing tools do not close this</h2>
+  <p>Three families of controls exist. All three bind to keys or accounts, and inherit the same failure.</p>
+
+  <h3 style="margin-top:22px">ERC-20 allowances</h3>
+  <p>An allowance is a mapping from owner to spender address to remaining amount. It has no notion of who operates the spender, no rate limit (only a decrementing total), and no notion of a permitted payee — an approved spender may move funds anywhere it likes. Revocation is per-spender, so it is defeated by a new spender.</p>
+
+  <h3 style="margin-top:22px">Session keys and delegated signers</h3>
+  <p>Session keys narrow authority in time and scope, which is a real improvement over an unbounded allowance. But the unit of authority is still a key: issued to a key, bounded for a key, expired for a key. Two session keys held by the same operator are two independent budgets, and the contract cannot tell they are related. Session keys make each grant smaller; they do not make grants aggregate to a party.</p>
+
+  <h3 style="margin-top:22px">Card-issuer controls</h3>
+  <p>Issuer-side controls (per-transaction ceilings, daily limits, merchant restrictions) do aggregate to an account, which is closer to the right shape — but the aggregation happens off-chain, in the issuer's ledger, under the issuer's discretion, against an account identity the issuer maintains. On-chain there has been no equivalent, because there has been nothing to aggregate against: no identifier that is stable across the addresses one party controls and does not itself become a tracking handle.</p>
+
+  <p style="margin-top:22px">The missing primitive is an identifier for a party that (a) a contract can read at spend time, (b) is stable across that party's addresses, and (c) is anonymous. World's proof-of-personhood supplies exactly that. What was missing was reading it <em>inside the payment path</em> instead of at a login screen.</p>
+</section>
+
+<section>
+  <div class="secno">3</div>
+  <h2>Design</h2>
+
+  <h3 style="margin-top:20px">The registry read</h3>
+  <p>World operates a registry, AgentBook, at <span class="mono">0xA23aB2712eA7BBa896930544C7d6636a96b944dA</span> on World Chain mainnet. It exposes <code>lookupHuman(address) returns (uint256)</code>, mapping an agent wallet address to an anonymous human identifier derived from a World ID nullifier.</p>
+  <p>HumanMandate calls this registry from inside the spend function. Every rule — the caps, the window, the revocation — is evaluated against the identifier returned for <code>msg.sender</code>, not against <code>msg.sender</code> itself. That single relocation is the whole idea: identity moves from the login screen into the payment path, where it can actually gate money.</p>
+
+  <h3 style="margin-top:24px">humanRef: never store the nullifier</h3>
+  <p>The raw human identifier never touches storage, calldata, or logs. The payer authorises a derived reference:</p>
+  <div class="formula">humanRef = keccak256(abi.encode(block.chainid, address(this), humanId))</div>
+  <p>Because the chain id and the contract address are inside the preimage, the same person has a different reference in every deployment. Nothing that HumanMandate persists can be used as a cross-context handle for a person, and nothing an observer reads off-chain links two deployments together. The contract gets an identity that is stable where it needs to be stable — across that person's addresses, within this contract — and useless everywhere else.</p>
+
+  <h3 style="margin-top:24px">Fail-closed</h3>
+  <p>The registry call is wrapped in try/catch. If the registry is unreachable, <code>refOf</code> returns 0 and every spend reverts. An identity system that fails open is not an identity system; the absence of an answer is treated as the absence of authority.</p>
+
+  <h3 style="margin-top:24px">The rolling window</h3>
+  <p><code>WINDOW = 1 days</code>, measured as a rolling 24 hours from the first spend of that window — not a UTC calendar bucket. This is deliberate. A calendar bucket permits two full caps to clear seconds apart across midnight, which means a "daily limit" of X is really a limit of 2X over any interval short enough to matter. A rolling window from first spend removes that edge.</p>
+
+  <h3 style="margin-top:24px">Two caps and a fixed payee</h3>
+  <ul>
+    <li><strong>windowCap</strong> — the total that may move within the rolling 24 hours.</li>
+    <li><strong>perTxCap</strong> — the ceiling on any single payment, so the whole budget cannot leave in one call.</li>
+    <li><strong>recipient</strong> — fixed at authorisation. Funds can only ever reach the payee named when the mandate was created. An agent that goes wrong can spend the budget; it cannot redirect it.</li>
+  </ul>
+
+  <h3 style="margin-top:24px">Custody and structure</h3>
+  <p>The contract holds an allowance, not funds. Custody never moves. There is no owner, no pause, and no proxy — nothing in the deployment can reach into a mandate after the fact.</p>
+  <p>Mandates are keyed <code>mapping(address payer =&gt; mapping(bytes32 mandateId =&gt; Mandate))</code>, so one payer holds many independent mandates. <code>authorize</code> refuses to overwrite a live mandate and reverts <code>AlreadyActive</code>, because silently re-arming an existing mandate would be an ungated limit raise wearing the costume of a create.</p>
+  <p><code>revoke</code> operates on the person. Every agent that person operates loses the mandate in the same transaction, present and future addresses alike — a later address resolves to the same reference, and that reference is no longer authorised.</p>
+  <p><code>lowerCap</code> is never gated: tightening your own leash should always be free and instant. Only <code>raiseLimits</code> costs anything.</p>
+</section>
+
+<section>
+  <div class="secno">4</div>
+  <h2>Step-up authentication</h2>
+  <p>The governing principle is asymmetry. Spending <em>inside</em> the limits you already set requires nobody to be present — that is the point of giving an agent a budget. Widening those limits is a different act, and it costs a face.</p>
+  <p><code>raiseLimits</code> requires a fresh liveness attestation, signed by a dedicated attestor key over an EIP-712 digest. The digest binds:</p>
+  <div class="formula">account + mandateId + newCap + newRecipient + deadline</div>
+  <p>This is PSD2 RTS Article 5 dynamic linking applied on-chain. The regulation requires the authentication code to be bound to a specific amount and a specific payee, so a user who authenticates cannot be tricked into authorising a different transfer than the one they saw. The contract enforces the same property: the person's face does not approve "an escalation" in the abstract, it approves <em>this cap</em> to <em>this payee</em>. An attestation captured for one raise is worthless for another.</p>
+  <p>Digests are single-use — a <code>usedStepUp</code> mapping records consumed digests, so a spent attestation cannot be replayed, including by whoever transported it. The deadline bounds how long an unused attestation stays valid.</p>
+  <p>The attestor is a dedicated signing key, deliberately separate from the deployer key, at <span class="mono">0x9F05370815CC50Ab913Dc090632841C8cd161d6E</span>. Separating it means that compromising deployment credentials does not by itself yield the power to approve limit raises.</p>
+</section>
+
+<section>
+  <div class="secno">5</div>
+  <h2>Threat model</h2>
+  <p>Four attackers, stated as what each can and cannot do against a live mandate.</p>
+
+  <div class="threat">
+    <div>
+      <h3>(a) An attacker with a fresh address</h3>
+      <div class="can"><div class="lbl">Can</div><p>Create unlimited addresses at zero cost, and call the contract from any of them.</p></div>
+      <div class="cant"><div class="lbl">Cannot</div><p>Spend anything. A fresh address has no AgentBook entry, so <code>refOf</code> returns 0 and the call reverts <code>NotHumanBacked</code>. This is the case that defeats allowance-based systems and is closed here (transaction 6 below). If the attacker is the revoked person returning on a brand-new address, the registry resolves that address to the same reference, which is no longer authorised: <code>NotAuthorized</code> (transaction 11).</p></div>
+    </div>
+
+    <div>
+      <h3>(b) An attacker holding the agent's key</h3>
+      <div class="can"><div class="lbl">Can</div><p>Spend up to <code>perTxCap</code> per call and up to <code>windowCap</code> per rolling 24 hours — the full budget the payer intended the agent to have. This is not a bug; a compromised agent is indistinguishable from a misbehaving agent, and the caps exist precisely to bound both.</p></div>
+      <div class="cant"><div class="lbl">Cannot</div><p>Exceed either cap (transactions 7 and 8). Send funds anywhere except the fixed recipient. Raise the limits, which needs an attestation the agent key cannot produce (transaction 9). Survive revocation, which is keyed to the person, so the attacker cannot escape it by moving to another address the same person controls. Worst case is bounded by one window's cap and lands in the payee's account, not the attacker's.</p></div>
+    </div>
+
+    <div>
+      <h3>(c) An attacker with the payer's unlocked phone</h3>
+      <div class="can"><div class="lbl">Can</div><p>Authorise new mandates and initiate a limit raise, since they hold the payer's signing capability.</p></div>
+      <div class="cant"><div class="lbl">Cannot</div><p>Complete a limit raise without producing a liveness attestation over the exact new cap and recipient. Possession of the device is not possession of the face. This is the specific attack dynamic linking is designed for: the payer's own signature is necessary but not sufficient to widen authority.</p></div>
+    </div>
+
+    <div>
+      <h3>(d) An attacker holding the attestor key</h3>
+      <div class="can"><div class="lbl">Can</div><p>Forge liveness attestations, and therefore approve limit raises that no live person consented to. This is the sharpest single point of failure in the design and we state it plainly.</p></div>
+      <div class="cant"><div class="lbl">Cannot</div><p>Move funds on their own. A raise still requires the payer's transaction, so the attestor key alone cannot spend, cannot exceed an existing cap, and cannot redirect funds to a new recipient without the payer also signing. The compromise is serious but it is a two-key attack, not a one-key one. Mitigation is discussed under limitations.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="secno">6</div>
+  <h2>Evidence</h2>
+  <p>The contract is deployed and exercised on World Chain mainnet. Eleven transactions were mined against the same contract, <span class="mono">0x7fcEc100ADc4e89b09a92e3f7931161791D06054</span>.</p>
+  <p>Five succeed. Six revert — <strong>and the six reverts are the point</strong>. Each is a designed refusal, mined deliberately so the refusal is verifiable on-chain rather than asserted in a slide. A rule you can only watch succeed is a rule you take on trust; a rule whose refusal is mined with a matching error selector is one anyone can check. Every revert reason below was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not assumed from the source.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Outcome</th>
+          <th>What it demonstrates</th>
+          <th>Selector / error</th>
+          <th>Transaction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="r-pass">
+          <td class="num">1</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Create the card (windowCap 3, perTxCap 2)</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x5b117a04db815f41d2a9870f49ca4cf098f872e280e7fb6826f1aee1e547ec2a">0x5b117a04db815f41d2a9870f49ca4cf098f872e280e7fb6826f1aee1e547ec2a</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">2</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">An address the mandate never named, and nobody ever approved, spends anyway</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb7fa49a1a4a08774ea6a470e50c2aa23a7645906d4b630e38fd9e6764bc44620">0xb7fa49a1a4a08774ea6a470e50c2aa23a7645906d4b630e38fd9e6764bc44620</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">3</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">A second agent of the same human draws on the same budget</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x7da5b4ba0d69c3d819f3ca43c5e0b4e395c02aa9fded20a6cb5650065436767e">0x7da5b4ba0d69c3d819f3ca43c5e0b4e395c02aa9fded20a6cb5650065436767e</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">4</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Raise the limit with a fresh liveness attestation</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb1e646009690254f768a3706204639e47b0bfda01261e9ab2d268941bc24e603">0xb1e646009690254f768a3706204639e47b0bfda01261e9ab2d268941bc24e603</a></td>
+        </tr>
+        <tr class="r-pass">
+          <td class="num">5</td>
+          <td><span class="tag pass">Accepted</span></td>
+          <td class="what">Stop the card</td>
+          <td class="sel muted">&mdash;</td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xd0eed6c84ad89c3b5b55c23c6b411fd629c3877105aa483e470cbc8161a6a972">0xd0eed6c84ad89c3b5b55c23c6b411fd629c3877105aa483e470cbc8161a6a972</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">6</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">A wallet with no human behind it</td>
+          <td class="sel"><span class="fail">0x203ac8ca</span><br /><span class="muted">NotHumanBacked(address)</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x9ebb088a3a91b11d110c8c396083ff1cdb34863f6c4bffa926834e8e9ae81f0e">0x9ebb088a3a91b11d110c8c396083ff1cdb34863f6c4bffa926834e8e9ae81f0e</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">7</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">One payment larger than perTxCap</td>
+          <td class="sel"><span class="fail">0xcb0bcbd5</span><br /><span class="muted">PerTxCapExceeded(uint256,uint128)</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x33e79b96d1035ed533e097566456af6a6a38846f032e8d966e1cb6d4288cb650">0x33e79b96d1035ed533e097566456af6a6a38846f032e8d966e1cb6d4288cb650</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">8</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">One wei past the rolling cap</td>
+          <td class="sel"><span class="fail">0x2e8b3b3b</span><br /><span class="muted">CapExceeded(address,uint256,uint128)</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xe91dcc5f00fafbed9154e6952689f6a155604511992187608b95c1aa4d54f2be">0xe91dcc5f00fafbed9154e6952689f6a155604511992187608b95c1aa4d54f2be</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">9</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">Raise the limit with no liveness proof</td>
+          <td class="sel"><span class="fail">0x6aaa9349</span><br /><span class="muted">LivenessRequired()</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x61f5ccf45deaa8f40712b769fd44f50b8a614dc38f05b51253dc00045911cdd5">0x61f5ccf45deaa8f40712b769fd44f50b8a614dc38f05b51253dc00045911cdd5</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">10</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">Replay a used attestation</td>
+          <td class="sel"><span class="fail">0x6c866211</span><br /><span class="muted">LivenessAlreadyUsed()</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x1fa5fa9072c5a58e9f0e147f5e8a1fe326b1c7cb5287ed57bc4044ebff8c11dc">0x1fa5fa9072c5a58e9f0e147f5e8a1fe326b1c7cb5287ed57bc4044ebff8c11dc</a></td>
+        </tr>
+        <tr class="r-fail">
+          <td class="num">11</td>
+          <td><span class="tag fail">Refused</span></td>
+          <td class="what">The revoked person returns on a brand-new address</td>
+          <td class="sel"><span class="fail">0xa4e1a97e</span><br /><span class="muted">NotAuthorized(address,bytes32)</span></td>
+          <td class="hash"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x23db1c10f5108d9d9ef930da742dd9fee9246d4293591ebe15775d51db115dab">0x23db1c10f5108d9d9ef930da742dd9fee9246d4293591ebe15775d51db115dab</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><span class="tag pass">Accepted</span> the rule permitted it</span>
+    <span><span class="tag fail">Refused</span> the rule refused it, by design, on-chain</span>
+  </div>
+
+  <div class="panel">
+    <h3>The discriminating test: #2 paired with #6</h3>
+    <p>Most of the table demonstrates rules that any contract could implement. Two rows demonstrate that the registry read is doing the work, and they only demonstrate it together.</p>
+    <p><strong>Transaction 2</strong> shows an address that the mandate never named, and that nobody ever approved, spending successfully. On its own this proves nothing good — it is equally consistent with a contract that simply has no access control.</p>
+    <p><strong>Transaction 6</strong> shows an address with no human behind it being refused with <code>NotHumanBacked</code>. On its own this also proves nothing interesting — it is consistent with an ordinary allowlist that happens not to contain that address.</p>
+    <p>Together they are decisive. The contract admits an address it was never told about and refuses another address it was never told about, and the only variable distinguishing them is whether the AgentBook registry resolves them to the authorised person. There is no allowlist, and there is no missing check. The gate is personhood.</p>
+  </div>
+
+  <h3 style="margin-top:30px">Deployment</h3>
+  <dl class="kv">
+    <div><dt>HumanMandate</dt><dd>0x7fcEc100ADc4e89b09a92e3f7931161791D06054</dd></div>
+    <div><dt>AgentBookRegistry adapter</dt><dd>0x9Ac36746eFbb8192b0D5BB8C0774026bff1b9aB4</dd></div>
+    <div><dt>AgentBook (World)</dt><dd>0xA23aB2712eA7BBa896930544C7d6636a96b944dA</dd></div>
+    <div><dt>Liveness attestor</dt><dd>0x9F05370815CC50Ab913Dc090632841C8cd161d6E</dd></div>
+    <div><dt>Chain</dt><dd>World Chain mainnet, chain id 480</dd></div>
+    <div><dt>Deployment gas</dt><dd>1,689,009 at 0.0011 gwei</dd></div>
+  </dl>
+
+  <h3 style="margin-top:30px">Test suite</h3>
+  <p>40 tests pass across four suites: HumanMandate (18), DcaLeash (7), StepUp (11), AgentBookFork (4). The AgentBookFork suite runs against a real World Chain mainnet fork pinned at block 32845385, so the registry integration is tested against the deployed registry rather than a stand-in. Passing tests are not the evidence of record here — the eleven mainnet transactions are. The suite makes that behaviour reproducible; it does not substitute for it.</p>
+</section>
+
+<section>
+  <div class="secno">7</div>
+  <h2>Platform constraints</h2>
+  <p>Four properties of the World App environment shaped the design. They are stated because they are load-bearing, not incidental.</p>
+
+  <h3 style="margin-top:22px">Approvals do not persist</h3>
+  <p>World App automatically revokes ERC-20 approvals after each transaction (documented on the docs.world.org send-transaction page). The consequence is structural: no standing allowance can exist in a World mini app using plain ERC-20 approvals, and therefore no recurring payment and no agent-initiated payment can exist either. Anything that needs to pay later, without the user present, cannot be built on approvals at all. HumanMandate's on-chain mandate mapping is a way around this — the authority lives in contract state that survives the transaction, rather than in an approval that does not.</p>
+
+  <h3 style="margin-top:22px">Contract allowlisting</h3>
+  <p>Contracts must be allowlisted in the World Developer Portal, or <code>sendTransaction</code> is rejected with <code>invalid_contract</code>. Deployment is not sufficient to be callable from a mini app.</p>
+
+  <h3 style="margin-top:22px">AgentBook requires Orb verification</h3>
+  <p>Only Orb-verified accounts can register an agent; device-level World ID accounts cannot. This raises the assurance of the identifier HumanMandate reads, and it also bounds who can use the system today.</p>
+
+  <h3 style="margin-top:22px">SDK and navigation</h3>
+  <p>MiniKit 2.x removed <code>MiniKit.verify</code>; World ID verification now lives in the separate <code>@worldcoin/idkit</code> package. Separately, World's Quick Actions deep link format is <code>https://world.org/mini-app?app_id={app_id}&amp;path={path}</code>, intended for one mini app to invoke a feature of another. There is no documented mechanism for the invoked app to hand control back to the caller — the platform provides a one-way link only, which constrains any flow that would bounce a user out to another mini app mid-transaction and expect them back.</p>
+</section>
+
+<section>
+  <div class="secno">8</div>
+  <h2>Limitations and future work</h2>
+
+  <h3 style="margin-top:20px">Scope of the instrument</h3>
+  <p>The mandate moves one ERC-20 to one fixed payee. It is not a general-purpose consumer card, and there is no merchant network behind it. The fixed payee is a security property, but it is also a limit on what the thing currently is.</p>
+
+  <h3 style="margin-top:20px">Test money</h3>
+  <p>The on-chain demonstrations used a test token ("DemoUSD"), not real money. The contract logic and the registry read are exercised on mainnet; the value moved is not real value.</p>
+
+  <h3 style="margin-top:20px">A single attestor key</h3>
+  <p>Liveness attestations are signed by one key. Compromising it would let an attacker forge step-up approvals. As set out in the threat model, that attacker still cannot exceed an existing cap without an attestation being used, and cannot redirect funds without the payer also signing — but this is the weakest link in the system as built. A production deployment should use a threshold signature or MPC arrangement so that no single key can attest.</p>
+
+  <h3 style="margin-top:20px">Inherited registry assurance</h3>
+  <p>AgentBook's <code>register()</code> has no ownership check, so any Orb-verified user can bind an agent address to their own humanId. HumanMandate inherits whatever assurance AgentBook provides and does not attempt to exceed it. The design decision — read the registry inside the payment path — is orthogonal to how strong the registry is, and improves as the registry improves.</p>
+
+  <h3 style="margin-top:20px">Maturity</h3>
+  <p>The project is hackathon-stage and unaudited. Nothing here should hold real money without review.</p>
+
+  <h3 style="margin-top:20px">Future work</h3>
+  <ul>
+    <li>Threshold or MPC attestation to remove the single-key dependency.</li>
+    <li>Multiple recipients per mandate, or a payee set, without giving up the property that funds cannot go to an arbitrary address.</li>
+    <li>Multi-asset mandates with per-asset caps.</li>
+    <li>An audit, and a review of the rolling-window accounting under adversarial timestamp conditions.</li>
+  </ul>
+</section>
+
+<footer>
+  <p class="small">HumanMandate. Built at ETHGlobal Lisbon 2026 for World Chain. All addresses, transaction hashes and error selectors in this document refer to World Chain mainnet, chain id 480, and are verifiable at <span class="mono">worldchain-mainnet.explorer.alchemy.com</span>. Unaudited.</p>
+</footer>
+
+</main>
+</body>
+</html>

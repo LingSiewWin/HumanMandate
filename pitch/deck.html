@@ -149,18 +149,40 @@
       <tr>
         <td>An address the mandate <b>never named</b> and nobody ever approved spends anyway — because its <b>person</b> was authorised</td>
         <td class="ok">succeeded</td>
-        <td class="mono">0x9aaac9e5…1158f8</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb7fa49a1a4a08774ea6a470e50c2aa23a7645906d4b630e38fd9e6764bc44620">0xb7fa49a1…bc44620</a></td>
       </tr>
       <tr>
         <td>The same call from an address with <b>no human behind it</b> — dies on the registry read</td>
         <td class="no">NotHumanBacked</td>
-        <td class="mono">0x3c41714f…3b52b7e</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x9ebb088a3a91b11d110c8c396083ff1cdb34863f6c4bffa926834e8e9ae81f0e">0x9ebb088a…ae81f0e</a></td>
       </tr>
-      <tr><td>Spending past the cap</td><td class="no">CapExceeded</td><td class="mono">0x0c77801c…3dacf2b</td></tr>
-      <tr><td>Raising the limit with no fresh liveness proof</td><td class="no">LivenessRequired</td><td class="mono">0xa0f862aa…4ec924</td></tr>
-      <tr><td>Raising it <b>with</b> one, then spending at the new limit</td><td class="ok">succeeded</td><td class="mono">0x529cb177…9ad57c</td></tr>
+      <tr>
+        <td>A single payment over the per-transaction cap</td>
+        <td class="no">PerTxCapExceeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x33e79b96d1035ed533e097566456af6a6a38846f032e8d966e1cb6d4288cb650">0x33e79b96…88cb650</a></td>
+      </tr>
+      <tr>
+        <td>One wei past the rolling 24-hour cap</td>
+        <td class="no">CapExceeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xe91dcc5f00fafbed9154e6952689f6a155604511992187608b95c1aa4d54f2be">0xe91dcc5f…d54f2be</a></td>
+      </tr>
+      <tr>
+        <td>Raise the limit with a fresh liveness attestation, then spend at the new cap</td>
+        <td class="ok">succeeded</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0xb1e646009690254f768a3706204639e47b0bfda01261e9ab2d268941bc24e603">0xb1e64600…c24e603</a></td>
+      </tr>
+      <tr>
+        <td>Raise the limit with no Selfie Check</td>
+        <td class="no">LivenessRequired</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x61f5ccf45deaa8f40712b769fd44f50b8a614dc38f05b51253dc00045911cdd5">0x61f5ccf4…911cdd5</a></td>
+      </tr>
+      <tr>
+        <td>A revoked person returns on a brand-new address</td>
+        <td class="no">NotAuthorized</td>
+        <td class="mono"><a href="https://worldchain-mainnet.explorer.alchemy.com/tx/0x23db1c10f5108d9d9ef930da742dd9fee9246d4293591ebe15775d51db115dab">0x23db1c10…b115dab</a></td>
+      </tr>
     </table>
-    <p class="note">All five are on one contract — <code>0x87BEFf69…fa769050</code> — and every revert reason was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not guessed: <code>0x203ac8ca NotHumanBacked</code>, <code>0x2e8b3b3b CapExceeded</code>, <code>0x6aaa9349 LivenessRequired</code>. No card issuer and no ERC-20 allowance can produce row one.</p>
+    <p class="note">All rows are on one contract — <code>0x7fcEc100ADc4e89b09a92e3f7931161791D06054</code> — and every revert selector was recovered with <code>cast run</code> and matched against <code>cast sig</code>, not guessed: <code>0x203ac8ca NotHumanBacked</code>, <code>0xcb0bcbd5 PerTxCapExceeded</code>, <code>0x2e8b3b3b CapExceeded</code>, <code>0x6aaa9349 LivenessRequired</code>, <code>0xa4e1a97e NotAuthorized</code>. No card issuer and no ERC-20 allowance can produce row one.</p>
   </div>
   <div class="num">05</div>
 </section>
@@ -199,7 +221,7 @@
     <h1 style="max-width:16ch">We stopped asking machines to be trustworthy.</h1>
     <p class="lead">We made betraying you structurally impossible instead — and made the leash belong to a person, so letting go of one address does not mean letting go of control.</p>
     <div class="rule"></div>
-    <p class="note mono">HumanMandate · World Chain mainnet · 0x87BEFf69860b253E6A2476c09d3784B3fa769050</p>
+    <p class="note mono">HumanMandate · World Chain mainnet · 0x7fcEc100ADc4e89b09a92e3f7931161791D06054</p>
   </div>
   <div class="num">07</div>
 </section>

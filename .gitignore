@@ -8,6 +8,9 @@
 # ── private docs: only README.md is public ──
 *.md
 !/README.md
+# FEEDBACK.md is a mandatory public qualification artifact for the Uniswap
+# Foundation prize (the submission must link to it), so it ships deliberately.
+!/FEEDBACK.md
 docs/
 CLAUDE.md
 .claude/

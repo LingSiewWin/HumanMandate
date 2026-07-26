@@ -1,26 +1,10 @@
 'use client';
 import { IDKit, identityCheck, selfieCheckLegacy, type RpContext } from '@worldcoin/idkit';
-import { MiniKit } from '@worldcoin/minikit-js';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { useSession } from 'next-auth/react';
+import { useWalletAddress } from '@/hooks/useWalletAddress';
 import { useEffect, useState } from 'react';
 
-/** Wallet address can arrive via MiniKit init, the raw WorldApp injection, or the SIWE session
- *  (where the template stores the address as user.id). */
-export function useWalletAddress(): string | undefined {
-  const { data: session } = useSession();
-  const sessionUser = session?.user as { walletAddress?: string; id?: string } | undefined;
-  const sessionAddress = [sessionUser?.walletAddress, sessionUser?.id].find((v) =>
-    v && /^0x[0-9a-fA-F]{40}$/.test(v),
-  );
-  return (
-    MiniKit.user?.walletAddress ??
-    (typeof window !== 'undefined'
-      ? (window as unknown as { WorldApp?: { wallet_address?: string } }).WorldApp?.wallet_address
-      : undefined) ??
-    sessionAddress
-  );
-}
+export { useWalletAddress } from '@/hooks/useWalletAddress';
 
 /**
  * Eligibility gate: Identity Check attests 18+ (and nationality for the demo persona)
